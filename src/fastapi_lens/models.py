@@ -51,6 +51,21 @@ class SegmentStatus(StrEnum):
     INCOMPLETE = "incomplete"
 
 
+class DependencyCacheStatus(StrEnum):
+    """How FastAPI resolved a logical dependency occurrence."""
+
+    HIT = "hit"
+    MISS = "miss"
+    BYPASS = "bypass"
+
+
+class DependencyScope(StrEnum):
+    """The teardown scope configured for a generator dependency."""
+
+    FUNCTION = "function"
+    REQUEST = "request"
+
+
 @dataclass(slots=True, frozen=True)
 class TraceError:
     """Redacted structured error information captured during tracing."""
@@ -68,6 +83,84 @@ class Diagnostic:
     severity: str
     message: str
     segment_id: str | None = None
+
+
+def _validate_logical_dependency(
+    *,
+    cache_status: DependencyCacheStatus,
+    cached_from_id: str | None,
+    setup_segment_id: str | None,
+    cleanup_segment_id: str | None,
+) -> None:
+    if cache_status is DependencyCacheStatus.HIT:
+        if cached_from_id is None:
+            raise ValueError("A cache hit must reference its source dependency.")
+        if setup_segment_id is not None or cleanup_segment_id is not None:
+            raise ValueError("A cache hit cannot reference execution segments.")
+    elif cached_from_id is not None:
+        raise ValueError("Only a cache hit can reference a source dependency.")
+    if cleanup_segment_id is not None and setup_segment_id is None:
+        raise ValueError("A cleanup segment requires a setup segment.")
+
+
+@dataclass(slots=True)
+class LogicalDependencyNode:
+    """A logical dependency resolution occurrence within an active trace."""
+
+    id: str
+    trace_id: str
+    name: str
+    cache_status: DependencyCacheStatus
+    parent_id: str | None = None
+    cached_from_id: str | None = None
+    setup_segment_id: str | None = None
+    cleanup_segment_id: str | None = None
+    scope: DependencyScope | None = None
+
+    def __post_init__(self) -> None:
+        self._validate()
+
+    @property
+    def use_cache(self) -> bool:
+        """Return whether FastAPI caching is enabled for this occurrence."""
+        return self.cache_status is not DependencyCacheStatus.BYPASS
+
+    @property
+    def executed(self) -> bool:
+        """Return whether the dependency callable executed for this occurrence."""
+        return self.cache_status is not DependencyCacheStatus.HIT
+
+    @property
+    def execution_segment_ids(self) -> tuple[str, ...]:
+        """Return setup and cleanup segment IDs in lifecycle order."""
+        return tuple(
+            segment_id
+            for segment_id in (self.setup_segment_id, self.cleanup_segment_id)
+            if segment_id is not None
+        )
+
+    def snapshot(self) -> "LogicalDependencySnapshot":
+        """Return an immutable copy after validating the current node state."""
+        self._validate()
+        return LogicalDependencySnapshot(
+            id=self.id,
+            trace_id=self.trace_id,
+            name=self.name,
+            cache_status=self.cache_status,
+            parent_id=self.parent_id,
+            cached_from_id=self.cached_from_id,
+            setup_segment_id=self.setup_segment_id,
+            cleanup_segment_id=self.cleanup_segment_id,
+            scope=self.scope,
+        )
+
+    def _validate(self) -> None:
+        _validate_logical_dependency(
+            cache_status=self.cache_status,
+            cached_from_id=self.cached_from_id,
+            setup_segment_id=self.setup_segment_id,
+            cleanup_segment_id=self.cleanup_segment_id,
+        )
 
 
 @dataclass(slots=True)
@@ -129,6 +222,7 @@ class RequestTrace:
     application_completed_ns: int | None = None
     status_code: int | None = None
     segments: list[TraceSegment] = field(default_factory=list)
+    logical_dependencies: list[LogicalDependencyNode] = field(default_factory=list)
     diagnostics: list[Diagnostic] = field(default_factory=list)
     error: TraceError | None = None
     complete: bool = False
@@ -188,6 +282,9 @@ class RequestTrace:
             application_completed_ns=self.application_completed_ns,
             status_code=self.status_code,
             segments=tuple(segment.snapshot() for segment in self.segments),
+            logical_dependencies=tuple(
+                dependency.snapshot() for dependency in self.logical_dependencies
+            ),
             diagnostics=tuple(self.diagnostics),
             error=self.error,
             complete=self.complete,
@@ -219,6 +316,48 @@ class TraceSegmentSnapshot:
 
 
 @dataclass(slots=True, frozen=True)
+class LogicalDependencySnapshot:
+    """An immutable logical dependency occurrence safe for storage."""
+
+    id: str
+    trace_id: str
+    name: str
+    cache_status: DependencyCacheStatus
+    parent_id: str | None
+    cached_from_id: str | None
+    setup_segment_id: str | None
+    cleanup_segment_id: str | None
+    scope: DependencyScope | None
+
+    def __post_init__(self) -> None:
+        _validate_logical_dependency(
+            cache_status=self.cache_status,
+            cached_from_id=self.cached_from_id,
+            setup_segment_id=self.setup_segment_id,
+            cleanup_segment_id=self.cleanup_segment_id,
+        )
+
+    @property
+    def use_cache(self) -> bool:
+        """Return whether FastAPI caching is enabled for this occurrence."""
+        return self.cache_status is not DependencyCacheStatus.BYPASS
+
+    @property
+    def executed(self) -> bool:
+        """Return whether the dependency callable executed for this occurrence."""
+        return self.cache_status is not DependencyCacheStatus.HIT
+
+    @property
+    def execution_segment_ids(self) -> tuple[str, ...]:
+        """Return setup and cleanup segment IDs in lifecycle order."""
+        return tuple(
+            segment_id
+            for segment_id in (self.setup_segment_id, self.cleanup_segment_id)
+            if segment_id is not None
+        )
+
+
+@dataclass(slots=True, frozen=True)
 class RequestTraceSnapshot:
     """A deeply immutable request trace safe for storage and export."""
 
@@ -234,6 +373,7 @@ class RequestTraceSnapshot:
     application_completed_ns: int | None
     status_code: int | None
     segments: tuple[TraceSegmentSnapshot, ...]
+    logical_dependencies: tuple[LogicalDependencySnapshot, ...]
     diagnostics: tuple[Diagnostic, ...]
     error: TraceError | None
     complete: bool
