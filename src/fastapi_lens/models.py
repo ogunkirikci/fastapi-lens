@@ -1,6 +1,6 @@
 """Core trace domain models."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TypeAlias
 
@@ -56,3 +56,27 @@ class Diagnostic:
     severity: str
     message: str
     segment_id: str | None = None
+
+
+@dataclass(slots=True)
+class TraceSegment:
+    """A mutable measured operation owned by an in-flight request trace."""
+
+    id: str
+    trace_id: str
+    type: SegmentType
+    name: str
+    start_ns: int
+    end_ns: int | None = None
+    parent_id: str | None = None
+    logical_dependency_id: str | None = None
+    status: SegmentStatus = SegmentStatus.INCOMPLETE
+    attributes: dict[str, JsonValue] = field(default_factory=dict)
+    error: TraceError | None = None
+
+    @property
+    def duration_ms(self) -> float | None:
+        """Return the measured wall-clock duration without clamping."""
+        if self.end_ns is None:
+            return None
+        return (self.end_ns - self.start_ns) / 1_000_000
