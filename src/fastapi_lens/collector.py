@@ -2,7 +2,13 @@
 
 from threading import RLock
 
-from fastapi_lens.models import RequestTrace, RequestTraceSnapshot, TraceSegment
+from fastapi_lens.models import (
+    RequestTrace,
+    RequestTraceSnapshot,
+    SegmentStatus,
+    TraceError,
+    TraceSegment,
+)
 
 
 class TraceCollector:
@@ -38,6 +44,24 @@ class TraceCollector:
                 self._late_segment_count += 1
                 return False
             self._trace.segments.append(segment)
+            return True
+
+    def finish_segment(
+        self,
+        segment: TraceSegment,
+        *,
+        end_ns: int,
+        status: SegmentStatus,
+        error: TraceError | None,
+    ) -> bool:
+        """Finish a segment atomically, or reject the late write."""
+        with self._lock:
+            if self._snapshot is not None:
+                self._late_segment_count += 1
+                return False
+            segment.end_ns = end_ns
+            segment.status = status
+            segment.error = error
             return True
 
     def finalize(self) -> RequestTraceSnapshot:
