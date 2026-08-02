@@ -3,18 +3,29 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import TypeAlias
+from typing import TypeAlias, TypeVar
 
 JsonValue: TypeAlias = (
     bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"] | None
 )
+_FrozenItem = TypeVar("_FrozenItem")
+
+
+class FrozenJsonArray(tuple[_FrozenItem, ...]):
+    """An immutable JSON array that remains distinct when empty."""
+
+
+class FrozenJsonObject(tuple[tuple[str, _FrozenItem], ...]):
+    """An immutable JSON object that remains distinct when empty."""
+
+
 FrozenJsonValue: TypeAlias = (
     bool
     | int
     | float
     | str
-    | tuple["FrozenJsonValue", ...]
-    | tuple[tuple[str, "FrozenJsonValue"], ...]
+    | FrozenJsonArray["FrozenJsonValue"]
+    | FrozenJsonObject["FrozenJsonValue"]
     | None
 )
 
@@ -22,9 +33,9 @@ FrozenJsonValue: TypeAlias = (
 def freeze_json_value(value: JsonValue) -> FrozenJsonValue:
     """Recursively convert mutable JSON containers into immutable tuples."""
     if isinstance(value, list):
-        return tuple(freeze_json_value(item) for item in value)
+        return FrozenJsonArray(freeze_json_value(item) for item in value)
     if isinstance(value, dict):
-        return tuple(
+        return FrozenJsonObject(
             (key, freeze_json_value(item)) for key, item in sorted(value.items())
         )
     return value
