@@ -2,9 +2,11 @@
 
 from typing import Any, Final
 
+from .config import LensConfig
 from .segments import current_trace, trace_segment
 
 __all__ = [
+    "LensConfig",
     "__version__",
     "current_trace",
     "instrument_sqlalchemy",

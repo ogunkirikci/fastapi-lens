@@ -14,6 +14,7 @@ from fastapi_lens.collector import TraceCollector
 from fastapi_lens.context import bind_request_context, reset_request_context
 from fastapi_lens.diagnostics.base import DiagnosticRule
 from fastapi_lens.models import RequestTrace, TraceError
+from fastapi_lens.redaction import TraceSanitizer
 from fastapi_lens.storage.base import TraceStore
 from fastapi_lens.storage.memory import MemoryTraceStore
 from fastapi_lens.utils.patterns import RouteFilter
@@ -59,6 +60,7 @@ class LensMiddleware:
         include_routes: Sequence[str] = ("*",),
         exclude_routes: Sequence[str] = (),
         diagnostic_rules: Sequence[DiagnosticRule] = (),
+        sanitizer: TraceSanitizer | None = None,
         clock_ns: Callable[[], int] = perf_counter_ns,
         wall_clock: Callable[[], datetime] = _utc_now,
         trace_id_factory: Callable[[], str] = lambda: uuid4().hex,
@@ -71,6 +73,7 @@ class LensMiddleware:
             exclude=exclude_routes,
         )
         self._diagnostic_rules = tuple(diagnostic_rules)
+        self._sanitizer = sanitizer if sanitizer is not None else TraceSanitizer()
         self._clock_ns = clock_ns
         self._wall_clock = wall_clock
         self._trace_id_factory = trace_id_factory
@@ -159,6 +162,7 @@ class LensMiddleware:
                         trace.diagnostics.extend(rule.evaluate(lifecycle_snapshot))
                     except Exception:
                         continue
+                self._sanitizer.sanitize(trace)
             snapshot = collector.finalize()
             if route_allowed:
                 with suppress(Exception):
