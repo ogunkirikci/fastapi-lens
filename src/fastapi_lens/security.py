@@ -113,11 +113,19 @@ class CsrfPolicy:
 
 def apply_dashboard_security_headers(response: Response) -> None:
     """Apply restrictive caching and browser execution policy headers."""
-    response.headers["Content-Security-Policy"] = DEFAULT_CONTENT_SECURITY_POLICY
-    response.headers["Cache-Control"] = "no-store"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Referrer-Policy"] = "no-referrer"
+    for name, value in dashboard_security_headers().items():
+        response.headers[name] = value
+
+
+def dashboard_security_headers() -> dict[str, str]:
+    """Return security headers shared by dashboard response surfaces."""
+    return {
+        "Content-Security-Policy": DEFAULT_CONTENT_SECURITY_POLICY,
+        "Cache-Control": "no-store",
+        "Pragma": "no-cache",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+    }
 
 
 def escape_untrusted_html(value: object) -> str:
