@@ -1,0 +1,243 @@
+{
+  "environment": {
+    "captured_at": "2026-08-03T06:33:42+00:00",
+    "cpu_count": 15,
+    "fastapi": "0.141.1",
+    "fastapi_lens": "0.1.0a0",
+    "jinja2": "3.1.6",
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "processor": "arm",
+    "python": "3.11.15",
+    "sqlalchemy": "2.0.51",
+    "starlette": "1.3.1"
+  },
+  "methodology": {
+    "allocation_measurement": "tracemalloc in a separate workload pass",
+    "clock": "time.perf_counter",
+    "memory_sample_requests": 200,
+    "percentile": "nearest-rank",
+    "transport": "in-process ASGI",
+    "warmup_requests": 100
+  },
+  "scenarios": [
+    {
+      "absolute_p50_overhead_ms": 0.03137590829282999,
+      "baseline": {
+        "approximate_bytes_per_trace": null,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.08341600187122822,
+        "p95_ms": 0.09312503971159458,
+        "p99_ms": 0.10358297731727362,
+        "peak_allocated_bytes": 51492,
+        "requests_per_second": 11690.511284117176,
+        "stored_trace_count": 0
+      },
+      "concurrency": 1,
+      "description": "Lifecycle middleware with optional phase capture disabled.",
+      "instrumented": {
+        "approximate_bytes_per_trace": 619.46,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.11479191016405821,
+        "p95_ms": 0.12729107402265072,
+        "p99_ms": 0.14699995517730713,
+        "peak_allocated_bytes": 188370,
+        "requests_per_second": 8507.060560474334,
+        "stored_trace_count": 200
+      },
+      "name": "minimum-capture",
+      "percentage_p50_overhead": 37.61377624075764,
+      "request_count": 1000,
+      "throughput_change_percent": -27.23106497461667
+    },
+    {
+      "absolute_p50_overhead_ms": 0.07450010161846876,
+      "baseline": {
+        "approximate_bytes_per_trace": null,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.08849997539073229,
+        "p95_ms": 0.10008295066654682,
+        "p99_ms": 0.1128750154748559,
+        "peak_allocated_bytes": 51564,
+        "requests_per_second": 11047.261984458779,
+        "stored_trace_count": 0
+      },
+      "concurrency": 1,
+      "description": "Handler and FastAPI dependency capture enabled.",
+      "instrumented": {
+        "approximate_bytes_per_trace": 1633.885,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.16300007700920105,
+        "p95_ms": 0.18312502652406693,
+        "p99_ms": 0.2037910744547844,
+        "peak_allocated_bytes": 474057,
+        "requests_per_second": 5991.483119316613,
+        "stored_trace_count": 200
+      },
+      "name": "dependency-capture",
+      "percentage_p50_overhead": 84.18092919184068,
+      "request_count": 1000,
+      "throughput_change_percent": -45.764994731315376
+    },
+    {
+      "absolute_p50_overhead_ms": 0.07858290337026119,
+      "baseline": {
+        "approximate_bytes_per_trace": null,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.2685000654309988,
+        "p95_ms": 0.29262504540383816,
+        "p99_ms": 0.3121249610558152,
+        "peak_allocated_bytes": 69571,
+        "requests_per_second": 3677.6587281469506,
+        "stored_trace_count": 0
+      },
+      "concurrency": 1,
+      "description": "Handler and SQLAlchemy query capture enabled.",
+      "instrumented": {
+        "approximate_bytes_per_trace": 1439.97,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.34708296880126,
+        "p95_ms": 0.38408301770687103,
+        "p99_ms": 0.4016250604763627,
+        "peak_allocated_bytes": 531903,
+        "requests_per_second": 2834.8688876208284,
+        "stored_trace_count": 200
+      },
+      "name": "sql-capture",
+      "percentage_p50_overhead": 29.267368424703804,
+      "request_count": 1000,
+      "throughput_change_percent": -22.9164776512794
+    },
+    {
+      "absolute_p50_overhead_ms": 0.04724995233118534,
+      "baseline": {
+        "approximate_bytes_per_trace": null,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.08300004992634058,
+        "p95_ms": 0.09224994573742151,
+        "p99_ms": 0.10425003711134195,
+        "peak_allocated_bytes": 51309,
+        "requests_per_second": 11781.384576084478,
+        "stored_trace_count": 0
+      },
+      "concurrency": 1,
+      "description": "Dashboard mounted and idle while handler capture is enabled.",
+      "instrumented": {
+        "approximate_bytes_per_trace": 946.295,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.13025000225752592,
+        "p95_ms": 0.145458965562284,
+        "p99_ms": 0.16345910262316465,
+        "peak_allocated_bytes": 316110,
+        "requests_per_second": 7502.607155750171,
+        "stored_trace_count": 200
+      },
+      "name": "dashboard-idle",
+      "percentage_p50_overhead": 56.927619167841335,
+      "request_count": 1000,
+      "throughput_change_percent": -36.318120274419826
+    },
+    {
+      "absolute_p50_overhead_ms": 0.08683395572006702,
+      "baseline": {
+        "approximate_bytes_per_trace": null,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.0892080133780837,
+        "p95_ms": 0.09766605217009783,
+        "p99_ms": 0.10741595178842545,
+        "peak_allocated_bytes": 188776,
+        "requests_per_second": 10675.719679605467,
+        "stored_trace_count": 0
+      },
+      "concurrency": 100,
+      "description": "One hundred concurrent dependency-backed async requests.",
+      "instrumented": {
+        "approximate_bytes_per_trace": 1988.74,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.17604196909815073,
+        "p95_ms": 0.19925006199628115,
+        "p99_ms": 0.21595798898488283,
+        "peak_allocated_bytes": 665705,
+        "requests_per_second": 5440.067457248791,
+        "stored_trace_count": 200
+      },
+      "name": "concurrent-100",
+      "percentage_p50_overhead": 97.33873946059656,
+      "request_count": 1000,
+      "throughput_change_percent": -49.042616137239804
+    },
+    {
+      "absolute_p50_overhead_ms": 0.06266601849347353,
+      "baseline": {
+        "approximate_bytes_per_trace": null,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.23354205768555403,
+        "p95_ms": 0.259542022831738,
+        "p99_ms": 0.27591700199991465,
+        "peak_allocated_bytes": 60242,
+        "requests_per_second": 4227.097286166885,
+        "stored_trace_count": 0
+      },
+      "concurrency": 1,
+      "description": "Synchronous endpoint with handler and serialization capture.",
+      "instrumented": {
+        "approximate_bytes_per_trace": 1305.1,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.29620807617902756,
+        "p95_ms": 0.3262090031057596,
+        "p99_ms": 0.34445803612470627,
+        "peak_allocated_bytes": 407272,
+        "requests_per_second": 3341.015341079903,
+        "stored_trace_count": 200
+      },
+      "name": "sync-endpoint",
+      "percentage_p50_overhead": 26.832862189579735,
+      "request_count": 1000,
+      "throughput_change_percent": -20.96194823778181
+    },
+    {
+      "absolute_p50_overhead_ms": 0.060415943153202534,
+      "baseline": {
+        "approximate_bytes_per_trace": null,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.08266698569059372,
+        "p95_ms": 0.09129091631621122,
+        "p99_ms": 0.10316702537238598,
+        "peak_allocated_bytes": 49688,
+        "requests_per_second": 11862.28474674361,
+        "stored_trace_count": 0
+      },
+      "concurrency": 1,
+      "description": "Asynchronous endpoint with handler and serialization capture.",
+      "instrumented": {
+        "approximate_bytes_per_trace": 1300.785,
+        "dropped_trace_count": 0,
+        "incomplete_trace_count": 0,
+        "p50_ms": 0.14308292884379625,
+        "p95_ms": 0.15962508041411638,
+        "p99_ms": 0.1782500185072422,
+        "peak_allocated_bytes": 404446,
+        "requests_per_second": 6828.5701975115535,
+        "stored_trace_count": 200
+      },
+      "name": "async-endpoint",
+      "percentage_p50_overhead": 73.08352016042721,
+      "request_count": 1000,
+      "throughput_change_percent": -42.43461235925813
+    }
+  ],
+  "schema_version": "1.0"
+}
