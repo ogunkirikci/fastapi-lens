@@ -11,7 +11,13 @@ from fastapi_lens.context import (
     exit_segment,
     reset_request_context,
 )
-from fastapi_lens.models import RequestTrace, SegmentType, TraceSegment
+from fastapi_lens.models import (
+    DependencyCacheStatus,
+    LogicalDependencyNode,
+    RequestTrace,
+    SegmentType,
+    TraceSegment,
+)
 
 
 def make_collector(trace_id: str = "trace-1") -> TraceCollector:
@@ -202,3 +208,20 @@ def test_finalization_is_stable_and_rejects_late_segments() -> None:
     assert current_segment_stack() == ()
 
     reset_request_context(context_token)
+
+
+def test_collector_rejects_logical_dependencies_after_finalization() -> None:
+    collector = make_collector()
+    dependency = LogicalDependencyNode(
+        id="dependency-1",
+        trace_id="trace-1",
+        name="dependency",
+        cache_status=DependencyCacheStatus.MISS,
+    )
+
+    assert collector.add_logical_dependency(dependency) is True
+    snapshot = collector.finalize()
+    assert collector.add_logical_dependency(dependency) is False
+
+    assert snapshot.logical_dependencies[0].id == "dependency-1"
+    assert collector.late_segment_count == 1

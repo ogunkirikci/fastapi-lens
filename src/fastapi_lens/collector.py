@@ -3,6 +3,7 @@
 from threading import RLock
 
 from fastapi_lens.models import (
+    LogicalDependencyNode,
     RequestTrace,
     RequestTraceSnapshot,
     SegmentStatus,
@@ -44,6 +45,15 @@ class TraceCollector:
                 self._late_segment_count += 1
                 return False
             self._trace.segments.append(segment)
+            return True
+
+    def add_logical_dependency(self, dependency: LogicalDependencyNode) -> bool:
+        """Add a logical dependency atomically, or reject it after finalization."""
+        with self._lock:
+            if self._snapshot is not None:
+                self._late_segment_count += 1
+                return False
+            self._trace.logical_dependencies.append(dependency)
             return True
 
     def finish_segment(
