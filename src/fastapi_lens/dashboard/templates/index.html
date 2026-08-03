@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>fastapi-lens</title>
+    <link
+      rel="stylesheet"
+      href="{{ request.url_for('dashboard_asset', asset_name='app.css') }}"
+    >
+    <script
+      src="{{ request.url_for('dashboard_asset', asset_name='app.js') }}"
+      defer
+    ></script>
+  </head>
+  <body>
+    <main
+      id="dashboard"
+      data-traces-url="{{ request.url_for('list_traces') }}"
+      data-routes-url="{{ request.url_for('route_summary') }}"
+      data-clear-url="{{ request.url_for('clear_traces') }}"
+      data-cookie-authenticated="{{ 'true' if cookie_authenticated else 'false' }}"
+      data-csrf-cookie-name="{{ csrf_cookie_name }}"
+      data-csrf-header-name="{{ csrf_header_name }}"
+    >
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <p class="eyebrow">Request execution profiler</p>
+            <h1>fastapi-lens</h1>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          {% if process_local %}
+          <span class="scope-badge" title="Data from this worker only">
+            Process-local data
+          </span>
+          {% endif %}
+          <button id="refresh-button" class="button secondary" type="button">
+            Refresh
+          </button>
+          <button id="clear-button" class="button danger" type="button">
+            Clear traces
+          </button>
+        </div>
+      </header>
+
+      <div id="notice" class="notice" role="status" aria-live="polite">
+        {% if process_local %}
+        This dashboard shows traces from this process only. Other workers are
+        not represented.
+        {% else %}
+        Trace storage scope is managed by the configured store.
+        {% endif %}
+      </div>
+
+      <nav class="tabs" aria-label="Dashboard views">
+        <button
+          class="tab active"
+          type="button"
+          data-view="requests"
+          aria-selected="true"
+        >
+          Recent requests
+        </button>
+        <button
+          class="tab"
+          type="button"
+          data-view="routes"
+          aria-selected="false"
+        >
+          Route summary
+        </button>
+      </nav>
+
+      <section id="requests-view" class="view">
+        <div class="workspace">
+          <section class="panel request-panel" aria-labelledby="requests-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Live trace buffer</p>
+                <h2 id="requests-title">Requests</h2>
+              </div>
+              <span id="request-count" class="count">0 traces</span>
+            </div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Started</th>
+                    <th>Request</th>
+                    <th>Status</th>
+                    <th>Response</th>
+                    <th>Post-response</th>
+                    <th>SQL</th>
+                    <th>Dependencies</th>
+                    <th>Diagnostics</th>
+                  </tr>
+                </thead>
+                <tbody id="request-rows">
+                  <tr>
+                    <td colspan="8" class="empty-state">Loading traces…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <aside
+            id="trace-detail"
+            class="panel detail-panel"
+            aria-labelledby="detail-title"
+          >
+            <div class="empty-detail">
+              <span class="empty-icon" aria-hidden="true">◎</span>
+              <h2 id="detail-title">Select a request</h2>
+              <p>
+                Choose a trace to inspect lifecycle timing, execution segments,
+                dependencies, SQL, diagnostics, and errors.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="routes-view" class="view" hidden>
+        <section class="panel" aria-labelledby="routes-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Complete response durations</p>
+              <h2 id="routes-title">Route summary</h2>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Route</th>
+                  <th>Requests</th>
+                  <th>Complete</th>
+                  <th>Average</th>
+                  <th>Minimum</th>
+                  <th>Maximum</th>
+                  <th>p50</th>
+                  <th>p95</th>
+                  <th>p99</th>
+                  <th>Errors</th>
+                </tr>
+              </thead>
+              <tbody id="route-rows">
+                <tr>
+                  <td colspan="10" class="empty-state">Loading routes…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <template id="detail-template">
+      <div class="detail-content">
+        <div class="detail-header">
+          <div>
+            <p class="eyebrow">Request detail</p>
+            <h2 data-field="route"></h2>
+            <p class="trace-id" data-field="trace-id"></p>
+          </div>
+          <span data-field="status"></span>
+        </div>
+
+        <section aria-labelledby="overview-title">
+          <h3 id="overview-title">Overview</h3>
+          <div class="metric-grid" data-section="overview"></div>
+        </section>
+
+        <section aria-labelledby="lifecycle-title">
+          <h3 id="lifecycle-title">Lifecycle checkpoints</h3>
+          <div class="metric-grid" data-section="lifecycle"></div>
+        </section>
+
+        <section aria-labelledby="waterfall-title">
+          <div class="section-heading">
+            <h3 id="waterfall-title">Execution waterfall</h3>
+            <span data-field="unattributed"></span>
+          </div>
+          <div class="waterfall" data-section="waterfall"></div>
+        </section>
+
+        <section aria-labelledby="dependencies-title">
+          <h3 id="dependencies-title">Dependency graph</h3>
+          <div data-section="dependencies"></div>
+        </section>
+
+        <section aria-labelledby="sql-title">
+          <h3 id="sql-title">SQL queries</h3>
+          <div class="table-scroll" data-section="sql"></div>
+        </section>
+
+        <section aria-labelledby="diagnostics-title">
+          <h3 id="diagnostics-title">Diagnostics</h3>
+          <div class="diagnostic-list" data-section="diagnostics"></div>
+        </section>
+
+        <section aria-labelledby="error-title" data-section="error-section">
+          <h3 id="error-title">Error information</h3>
+          <div data-section="error"></div>
+        </section>
+      </div>
+    </template>
+  </body>
+</html>

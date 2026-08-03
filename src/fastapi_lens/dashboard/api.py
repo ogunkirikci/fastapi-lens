@@ -3,10 +3,13 @@
 import math
 from collections import defaultdict
 from collections.abc import Sequence
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.params import Depends as DependsParameter
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from starlette.datastructures import MutableHeaders
+from starlette.responses import FileResponse, HTMLResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from fastapi_lens.config import LensConfig
@@ -28,6 +31,14 @@ from fastapi_lens.security import (
     validate_dashboard_configuration,
 )
 from fastapi_lens.storage.base import TraceStore
+
+_DASHBOARD_DIRECTORY = Path(__file__).parent
+_TEMPLATE_DIRECTORY = _DASHBOARD_DIRECTORY / "templates"
+_STATIC_DIRECTORY = _DASHBOARD_DIRECTORY / "static"
+_STATIC_ASSETS = {
+    "app.css": ("text/css", _STATIC_DIRECTORY / "app.css"),
+    "app.js": ("text/javascript", _STATIC_DIRECTORY / "app.js"),
+}
 
 
 class DashboardSecurityHeadersMiddleware:
@@ -67,6 +78,18 @@ def _fastapi_dependencies(
 
 def _process_local(store: TraceStore) -> bool:
     return bool(getattr(store, "process_local", False))
+
+
+def _template_environment() -> Environment:
+    """Create an autoescaping environment for the packaged dashboard templates."""
+    return Environment(
+        loader=FileSystemLoader(_TEMPLATE_DIRECTORY),
+        autoescape=select_autoescape(
+            enabled_extensions=("html", "xml"),
+            default_for_string=True,
+            default=True,
+        ),
+    )
 
 
 def _list_item(trace: RequestTraceSnapshot) -> TraceListItem:
@@ -171,6 +194,7 @@ def create_dashboard_app(
     )
     selected_csrf_policy = csrf_policy if csrf_policy is not None else CsrfPolicy()
     process_local = _process_local(store)
+    templates = _template_environment()
     app = FastAPI(
         title="fastapi-lens dashboard API",
         docs_url=None,
@@ -179,6 +203,34 @@ def create_dashboard_app(
         dependencies=_fastapi_dependencies(authorization_dependencies),
     )
     app.add_middleware(DashboardSecurityHeadersMiddleware)
+
+    @app.get("/", response_class=HTMLResponse, name="dashboard_index")
+    async def dashboard_index(request: Request) -> HTMLResponse:
+        template = templates.get_template("index.html")
+        return HTMLResponse(
+            template.render(
+                request=request,
+                process_local=process_local,
+                cookie_authenticated=cookie_authenticated,
+                csrf_cookie_name=selected_csrf_policy.cookie_name,
+                csrf_header_name=selected_csrf_policy.header_name,
+            )
+        )
+
+    @app.get(
+        "/static/{asset_name}",
+        response_class=FileResponse,
+        name="dashboard_asset",
+    )
+    async def dashboard_asset(asset_name: str) -> FileResponse:
+        asset = _STATIC_ASSETS.get(asset_name)
+        if asset is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Dashboard asset not found.",
+            )
+        media_type, path = asset
+        return FileResponse(path, media_type=media_type)
 
     @app.get("/api/traces", response_model=TraceListResponse)
     async def list_traces(

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 import pytest
-from fastapi import Header, HTTPException, status
+from fastapi import FastAPI, Header, HTTPException, status
 from fastapi.testclient import TestClient
 
 from fastapi_lens.config import LensConfig
@@ -18,7 +18,7 @@ from fastapi_lens.models import (
     TraceError,
     TraceSegment,
 )
-from fastapi_lens.security import DashboardSecurityError
+from fastapi_lens.security import CsrfPolicy, DashboardSecurityError
 from fastapi_lens.storage.memory import MemoryTraceStore
 
 NS_PER_MS = 1_000_000
@@ -382,3 +382,128 @@ def test_dashboard_creation_fails_closed_for_disabled_or_unsafe_config() -> None
             config=dashboard_config(),
             max_page_size=0,
         )
+
+
+def test_dashboard_html_exposes_every_mvp_view_with_external_assets() -> None:
+    app = create_dashboard_app(
+        seeded_store(),
+        config=dashboard_config(),
+        max_page_size=2,
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert_security_headers(response)
+    for label in (
+        "Recent requests",
+        "Route summary",
+        "Lifecycle checkpoints",
+        "Execution waterfall",
+        "Dependency graph",
+        "SQL queries",
+        "Diagnostics",
+        "Error information",
+    ):
+        assert label in response.text
+    assert 'href="http://testserver/static/app.css"' in response.text
+    assert 'src="http://testserver/static/app.js"' in response.text
+    assert "<style" not in response.text
+    assert "<script>" not in response.text
+    assert "trace-1" not in response.text
+    assert "process only" in response.text
+
+
+def test_dashboard_assets_are_packaged_safe_and_non_cacheable() -> None:
+    app = create_dashboard_app(
+        seeded_store(),
+        config=dashboard_config(),
+        max_page_size=2,
+    )
+
+    with TestClient(app) as client:
+        javascript = client.get("/static/app.js")
+        stylesheet = client.get("/static/app.css")
+        missing = client.get("/static/missing.js")
+
+    assert javascript.status_code == 200
+    assert javascript.headers["content-type"].startswith("text/javascript")
+    assert '"use strict"' in javascript.text
+    assert "textContent" in javascript.text
+    assert "createTextNode" in javascript.text
+    assert "innerHTML" not in javascript.text
+    assert ".style." not in javascript.text
+    assert stylesheet.status_code == 200
+    assert stylesheet.headers["content-type"].startswith("text/css")
+    assert "--accent" in stylesheet.text
+    assert missing.status_code == 404
+    assert missing.json() == {"detail": "Dashboard asset not found."}
+    for response in (javascript, stylesheet, missing):
+        assert_security_headers(response)
+
+
+def test_dashboard_template_autoescapes_configuration_values() -> None:
+    csrf_policy = CsrfPolicy(
+        cookie_name='unsafe" onmouseover="alert(1)',
+        header_name="x-safe-csrf",
+    )
+    app = create_dashboard_app(
+        seeded_store(),
+        config=dashboard_config(),
+        max_page_size=2,
+        csrf_policy=csrf_policy,
+        cookie_authenticated=True,
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/")
+
+    assert 'data-cookie-authenticated="true"' in response.text
+    assert 'unsafe" onmouseover="alert(1)' not in response.text
+    assert "unsafe&#34; onmouseover=&#34;alert(1)" in response.text
+
+
+def test_dashboard_html_and_assets_share_authorization_policy() -> None:
+    app = create_dashboard_app(
+        seeded_store(),
+        config=dashboard_config(
+            environment="production",
+            allow_in_production=True,
+        ),
+        authorization_dependencies=(require_admin,),
+        max_page_size=2,
+    )
+
+    with TestClient(app) as client:
+        unauthorized_html = client.get("/")
+        unauthorized_asset = client.get("/static/app.js")
+        authorized_html = client.get("/", headers={"x-admin": "allowed"})
+
+    assert unauthorized_html.status_code == 401
+    assert unauthorized_asset.status_code == 401
+    assert "trace-1" not in unauthorized_html.text
+    assert "use strict" not in unauthorized_asset.text
+    assert authorized_html.status_code == 200
+    assert_security_headers(unauthorized_html)
+    assert_security_headers(unauthorized_asset)
+
+
+def test_dashboard_urls_include_the_application_mount_path() -> None:
+    dashboard_app = create_dashboard_app(
+        seeded_store(),
+        config=dashboard_config(),
+        max_page_size=2,
+    )
+    parent = FastAPI()
+    parent.mount("/__lens__", dashboard_app)
+
+    with TestClient(parent) as client:
+        response = client.get("/__lens__/")
+        asset = client.get("/__lens__/static/app.js")
+
+    assert response.status_code == 200
+    assert 'data-traces-url="http://testserver/__lens__/api/traces"' in response.text
+    assert 'href="http://testserver/__lens__/static/app.css"' in response.text
+    assert asset.status_code == 200
