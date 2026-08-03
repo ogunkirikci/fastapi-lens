@@ -10,6 +10,8 @@ uv run pytest
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy src tests
+uv build
+uv run twine check dist/*
 ```
 
 ## Project conventions
@@ -22,3 +24,10 @@ uv run mypy src tests
 
 The profiler specification and task order are documented in
 [`docs/FASTAPI_REQUEST_EXECUTION_PROFILER.md`](docs/FASTAPI_REQUEST_EXECUTION_PROFILER.md).
+
+Do not commit generated local databases, credentials, trace exports, or
+deployment data. Security-sensitive changes should include tests for failure
+paths and data leakage.
+
+Release preparation and Trusted Publishing setup are documented in
+[`docs/releasing.md`](docs/releasing.md).

@@ -258,6 +258,10 @@ def test_lens_config_is_secure_by_default_and_validates_limits() -> None:
         LensConfig(dashboard_path="/")
     with pytest.raises(ValueError, match=r"max_trace_bytes must be greater"):
         LensConfig(max_trace_bytes=0)
+    with pytest.raises(ValueError, match=r"max_api_page_size must be greater"):
+        LensConfig(max_api_page_size=0)
+    with pytest.raises(ValueError, match=r"slow_request_threshold_ms"):
+        LensConfig(slow_request_threshold_ms=-1)
 
 
 def require_admin() -> None:

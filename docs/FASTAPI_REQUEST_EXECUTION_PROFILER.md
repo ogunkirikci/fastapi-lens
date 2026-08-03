@@ -1392,39 +1392,39 @@ Report:
 
 ## 21. MVP Acceptance Criteria
 
-- [ ] The package installs successfully.
-- [ ] `Lens(app)` attaches to FastAPI.
-- [ ] Pure ASGI middleware records all lifecycle checkpoints correctly.
-- [ ] Missing responses and disconnects do not produce invented durations.
-- [ ] Async handlers are profiled correctly.
-- [ ] Sync handlers are profiled correctly.
-- [ ] Nested dependency relationships are correct.
-- [ ] `yield` setup and cleanup are separate.
-- [ ] Function and request dependency scopes are correct.
-- [ ] Cached dependency metadata is correct without re-execution.
-- [ ] Concurrent requests never mix trace data.
-- [ ] Endpoint errors do not change application behavior.
-- [ ] Only explicitly registered SQLAlchemy engines are captured.
-- [ ] Sync and async engine registration is idempotent and removable.
-- [ ] SQL bind values are not stored.
-- [ ] Serialization is measured reliably.
-- [ ] Streaming response creation and transmission are separated.
-- [ ] JSON includes `schema_version` and lifecycle durations.
-- [ ] JSON trace endpoints work.
-- [ ] The HTML dashboard lists requests.
-- [ ] Request detail displays segments.
-- [ ] Include and exclude filters work.
-- [ ] Disable stops new traces and safely finalizes active traces.
-- [ ] The dashboard is off by default.
-- [ ] Staging and production require authorization.
-- [ ] Redaction and limits run before storage.
-- [ ] Escaping, CSP, no-store, and mutation protection are tested.
-- [ ] Stored snapshots cannot be mutated.
-- [ ] The coverage target is met.
-- [ ] README quick-start examples work.
-- [ ] Percentage and absolute benchmark results are documented.
-- [ ] The supported FastAPI adapter range is documented.
-- [ ] The package is ready for TestPyPI.
+- [x] The package installs successfully.
+- [x] `Lens(app)` attaches to FastAPI.
+- [x] Pure ASGI middleware records all lifecycle checkpoints correctly.
+- [x] Missing responses and disconnects do not produce invented durations.
+- [x] Async handlers are profiled correctly.
+- [x] Sync handlers are profiled correctly.
+- [x] Nested dependency relationships are correct.
+- [x] `yield` setup and cleanup are separate.
+- [x] Function and request dependency scopes are correct.
+- [x] Cached dependency metadata is correct without re-execution.
+- [x] Concurrent requests never mix trace data.
+- [x] Endpoint errors do not change application behavior.
+- [x] Only explicitly registered SQLAlchemy engines are captured.
+- [x] Sync and async engine registration is idempotent and removable.
+- [x] SQL bind values are not stored.
+- [x] Serialization is measured reliably.
+- [x] Streaming response creation and transmission are separated.
+- [x] JSON includes `schema_version` and lifecycle durations.
+- [x] JSON trace endpoints work.
+- [x] The HTML dashboard lists requests.
+- [x] Request detail displays segments.
+- [x] Include and exclude filters work.
+- [x] Disable stops new traces and safely finalizes active traces.
+- [x] The dashboard is off by default.
+- [x] Staging and production require authorization.
+- [x] Redaction and limits run before storage.
+- [x] Escaping, CSP, no-store, and mutation protection are tested.
+- [x] Stored snapshots cannot be mutated.
+- [x] The coverage target is met.
+- [x] README quick-start examples work.
+- [x] Percentage and absolute benchmark results are documented.
+- [x] The supported FastAPI adapter range is documented.
+- [x] The package is ready for TestPyPI.
 
 ---
 

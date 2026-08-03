@@ -31,6 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Typing :: Typed",
 ]
+urls = { Documentation = "https://github.com/ogunkirikci/fastapi-lens/tree/main/docs", Issues = "https://github.com/ogunkirikci/fastapi-lens/issues", Repository = "https://github.com/ogunkirikci/fastapi-lens" }
 dependencies = [
     "fastapi>=0.121.0,<0.142.0",
     "jinja2>=3.1,<4",

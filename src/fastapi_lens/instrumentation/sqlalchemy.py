@@ -75,7 +75,7 @@ class _SqlExecution:
 @dataclass(slots=True)
 class _EngineRegistration:
     engine: Engine
-    owners: set[object] = field(default_factory=set)
+    owner_limits: dict[object, int] = field(default_factory=dict)
 
 
 class SqlAlchemyInstrumentation:
@@ -104,21 +104,32 @@ class SqlAlchemyInstrumentation:
         with self._lock:
             return id(target) in self._registrations
 
-    def register(self, engine: Engine | AsyncEngine, owner: object) -> None:
+    def register(
+        self,
+        engine: Engine | AsyncEngine,
+        owner: object,
+        *,
+        max_sql_length: int | None = None,
+    ) -> None:
         """Register one owner without adding duplicate event listeners."""
+        selected_max_sql_length = (
+            self._max_sql_length if max_sql_length is None else max_sql_length
+        )
+        if selected_max_sql_length <= 0:
+            raise ValueError("max_sql_length must be greater than zero.")
         target = self._target(engine)
         target_id = id(target)
         with self._lock:
             registration = self._registrations.get(target_id)
             if registration is not None:
-                registration.owners.add(owner)
+                registration.owner_limits[owner] = selected_max_sql_length
                 return
             event.listen(target, "before_cursor_execute", self._before_listener)
             event.listen(target, "after_cursor_execute", self._after_listener)
             event.listen(target, "handle_error", self._error_listener)
             self._registrations[target_id] = _EngineRegistration(
                 engine=target,
-                owners={owner},
+                owner_limits={owner: selected_max_sql_length},
             )
 
     def unregister(self, engine: Engine | AsyncEngine, owner: object) -> None:
@@ -129,8 +140,8 @@ class SqlAlchemyInstrumentation:
             registration = self._registrations.get(target_id)
             if registration is None:
                 return
-            registration.owners.discard(owner)
-            if registration.owners:
+            registration.owner_limits.pop(owner, None)
+            if registration.owner_limits:
                 return
             self._remove_registration(target_id, registration)
 
@@ -138,8 +149,8 @@ class SqlAlchemyInstrumentation:
         """Remove an owner from every engine it registered."""
         with self._lock:
             for target_id, registration in tuple(self._registrations.items()):
-                registration.owners.discard(owner)
-                if not registration.owners:
+                registration.owner_limits.pop(owner, None)
+                if not registration.owner_limits:
                     self._remove_registration(target_id, registration)
 
     def restore_all(self) -> None:
@@ -189,13 +200,14 @@ class SqlAlchemyInstrumentation:
                 return
             normalized = normalize_sql(statement)
             operation = sql_operation(normalized)
+            max_sql_length = self._registration_max_sql_length(connection)
             attributes: dict[str, JsonValue] = {
                 "dialect": connection.dialect.name,
                 "executemany": executemany,
                 "operation": operation,
                 "statement": truncate_sql(
                     normalized,
-                    max_length=self._max_sql_length,
+                    max_length=max_sql_length,
                 ),
                 "statement_fingerprint": fingerprint_sql(normalized),
             }
@@ -220,6 +232,13 @@ class SqlAlchemyInstrumentation:
             )
         except Exception:
             return
+
+    def _registration_max_sql_length(self, connection: Connection) -> int:
+        with self._lock:
+            registration = self._registrations.get(id(connection.engine))
+            if registration is None or not registration.owner_limits:
+                return self._max_sql_length
+            return min(registration.owner_limits.values())
 
     def _after_cursor_execute(
         self,

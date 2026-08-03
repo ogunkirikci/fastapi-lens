@@ -204,8 +204,9 @@ The initial development range is:
 FastAPI >=0.121.0,<0.142.0
 ```
 
-This is an implementation target, not a release claim. Before publishing a
-version as supported:
+This range became the initial release claim after the capability probes and
+adapter suites passed. Every supported version must continue to meet these
+conditions:
 
 - Its capability probe must pass.
 - Its adapter test suite must pass.

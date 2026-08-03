@@ -11,3 +11,4 @@ build/
 dist/
 htmlcov/
 coverage.xml
+fastapi_lens_example.db

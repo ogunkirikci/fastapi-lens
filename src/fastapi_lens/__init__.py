@@ -3,9 +3,11 @@
 from typing import Any, Final
 
 from .config import LensConfig
+from .lens import Lens
 from .segments import current_trace, trace_segment
 
 __all__ = [
+    "Lens",
     "LensConfig",
     "__version__",
     "current_trace",
