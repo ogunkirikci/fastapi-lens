@@ -10,16 +10,16 @@ from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 from starlette.types import Message, Receive, Scope, Send
 
-from fastapi_lens.context import current_collector
-from fastapi_lens.diagnostics.base import DiagnosticRule
-from fastapi_lens.middleware import LensMiddleware, ProfilerState
-from fastapi_lens.models import (
+from fastapi_latensight.context import current_collector
+from fastapi_latensight.diagnostics.base import DiagnosticRule
+from fastapi_latensight.middleware import LatensightMiddleware, ProfilerState
+from fastapi_latensight.models import (
     DependencyCacheStatus,
     Diagnostic,
     LogicalDependencyNode,
     RequestTraceSnapshot,
 )
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 
 def stored_traces(store: MemoryTraceStore) -> list[RequestTraceSnapshot]:
@@ -35,7 +35,7 @@ def test_normal_response_records_all_lifecycle_checkpoints() -> None:
         assert current_collector() is not None
         return {"item_id": item_id}
 
-    with TestClient(LensMiddleware(app, store=store)) as client:
+    with TestClient(LatensightMiddleware(app, store=store)) as client:
         response = client.get("/items/42")
 
     assert response.json() == {"item_id": 42}
@@ -70,7 +70,7 @@ def test_streaming_response_records_body_completion_before_app_completion() -> N
     async def endpoint() -> StreamingResponse:
         return StreamingResponse(chunks())
 
-    with TestClient(LensMiddleware(app, store=store)) as client:
+    with TestClient(LatensightMiddleware(app, store=store)) as client:
         response = client.get("/stream")
 
     assert response.content == b"firstsecond"
@@ -90,7 +90,7 @@ def test_outer_wrapper_captures_generated_500_and_original_error() -> None:
         raise RuntimeError("expected failure")
 
     with TestClient(
-        LensMiddleware(app, store=store),
+        LatensightMiddleware(app, store=store),
         raise_server_exceptions=False,
     ) as client:
         response = client.get("/error")
@@ -107,7 +107,7 @@ def test_outer_wrapper_captures_generated_500_and_original_error() -> None:
 def test_app_middleware_placement_records_incomplete_unhandled_error() -> None:
     app = FastAPI()
     store = MemoryTraceStore()
-    app.add_middleware(LensMiddleware, store=store)
+    app.add_middleware(LatensightMiddleware, store=store)
 
     @app.get("/error")
     async def endpoint() -> None:
@@ -142,7 +142,7 @@ async def test_disconnect_without_response_produces_incomplete_trace() -> None:
     async def send(_message: Message) -> None:
         raise AssertionError("A disconnected request must not send a response")
 
-    middleware = LensMiddleware(disconnected_app, store=store)
+    middleware = LatensightMiddleware(disconnected_app, store=store)
     await middleware(http_scope("/disconnect"), receive, send)
 
     trace = (await store.list())[0]
@@ -168,7 +168,7 @@ async def test_cancellation_is_re_raised_and_stored_as_incomplete() -> None:
     async def send(_message: Message) -> None:
         raise AssertionError("A cancelled request must not send a response")
 
-    middleware = LensMiddleware(cancelled_app, store=store)
+    middleware = LatensightMiddleware(cancelled_app, store=store)
     with pytest.raises(asyncio.CancelledError):
         await middleware(http_scope("/cancel"), receive, send)
 
@@ -187,7 +187,7 @@ def test_runtime_disable_only_affects_new_requests() -> None:
     async def endpoint() -> dict[str, str]:
         return {"status": "ok"}
 
-    middleware = LensMiddleware(app, store=store, state=state)
+    middleware = LatensightMiddleware(app, store=store, state=state)
     with TestClient(middleware) as client:
         assert client.get("/").status_code == 200
         state.enable()
@@ -216,7 +216,7 @@ async def test_active_request_finalizes_after_runtime_disable() -> None:
     async def send(_message: Message) -> None:
         return None
 
-    middleware = LensMiddleware(app, store=store, state=state)
+    middleware = LatensightMiddleware(app, store=store, state=state)
     active_request = asyncio.create_task(
         middleware(http_scope("/active"), receive, send)
     )
@@ -248,7 +248,7 @@ def test_include_exclude_and_final_route_template_filters() -> None:
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    middleware = LensMiddleware(
+    middleware = LatensightMiddleware(
         app,
         store=store,
         include_routes=("/api/*",),
@@ -271,7 +271,7 @@ def test_404_405_and_trailing_slash_have_explicit_filter_behavior() -> None:
         return []
 
     with TestClient(
-        LensMiddleware(app, store=store),
+        LatensightMiddleware(app, store=store),
         follow_redirects=False,
     ) as client:
         assert client.get("/missing").status_code == 404
@@ -296,7 +296,7 @@ def test_mounted_route_template_includes_mount_prefix() -> None:
         return {"item_id": item_id}
 
     app.mount("/api", subapp)
-    with TestClient(LensMiddleware(app, store=store)) as client:
+    with TestClient(LatensightMiddleware(app, store=store)) as client:
         assert client.get("/api/items/42").status_code == 200
 
     assert stored_traces(store)[0].route == "/api/items/{item_id}"
@@ -311,7 +311,7 @@ def test_deployment_root_path_is_not_added_to_route_template() -> None:
         return []
 
     with TestClient(
-        LensMiddleware(app, store=store),
+        LatensightMiddleware(app, store=store),
         root_path="/service",
     ) as client:
         assert client.get("/items").status_code == 200
@@ -324,7 +324,7 @@ def test_route_template_tolerates_non_string_root_path() -> None:
     scope["route"] = SimpleNamespace(path="/items")
     scope["root_path"] = 42
 
-    assert LensMiddleware._route_template(scope, base_root_path="") == "/items"
+    assert LatensightMiddleware._route_template(scope, base_root_path="") == "/items"
 
 
 class FindingRule:
@@ -359,7 +359,7 @@ def test_diagnostic_rules_run_and_failures_are_isolated() -> None:
     async def endpoint() -> None:
         return None
 
-    middleware = LensMiddleware(
+    middleware = LatensightMiddleware(
         app,
         store=store,
         diagnostic_rules=(accepts_rule(FailingRule()), accepts_rule(FindingRule())),
@@ -402,7 +402,7 @@ def test_storage_failure_does_not_change_application_response() -> None:
     async def endpoint() -> dict[str, str]:
         return {"status": "ok"}
 
-    with TestClient(LensMiddleware(app, store=FailingStore())) as client:
+    with TestClient(LatensightMiddleware(app, store=FailingStore())) as client:
         response = client.get("/")
 
     assert response.status_code == 200
@@ -427,7 +427,7 @@ def test_collector_integrity_failure_does_not_change_application_response() -> N
         collector.trace.logical_dependencies.append(dependency)
         return {"status": "ok"}
 
-    with TestClient(LensMiddleware(app, store=store)) as client:
+    with TestClient(LatensightMiddleware(app, store=store)) as client:
         response = client.get("/")
 
     assert response.status_code == 200
@@ -447,7 +447,7 @@ async def test_concurrent_requests_never_mix_trace_context() -> None:
         assert current_collector() is collector
         return {"item_id": item_id, "trace_id": collector.trace.id}
 
-    middleware = LensMiddleware(app, store=store)
+    middleware = LatensightMiddleware(app, store=store)
 
     async def request(index: int) -> dict[str, str | int]:
         messages: list[Message] = []
@@ -502,7 +502,7 @@ async def test_non_http_scope_bypasses_tracing() -> None:
         "subprotocols": [],
     }
 
-    await LensMiddleware(app, store=store)(scope, receive, send)
+    await LatensightMiddleware(app, store=store)(scope, receive, send)
 
     assert called is True
     assert await store.list() == []
@@ -523,7 +523,7 @@ async def test_non_string_initial_root_path_is_tolerated() -> None:
 
     scope: Any = http_scope("/items")
     scope["root_path"] = 42
-    await LensMiddleware(app, store=store)(scope, receive, send)
+    await LatensightMiddleware(app, store=store)(scope, receive, send)
 
     trace = (await store.list())[0]
     assert trace.path == "/items"

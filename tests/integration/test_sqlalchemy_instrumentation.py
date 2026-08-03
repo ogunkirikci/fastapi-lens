@@ -11,21 +11,21 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.context import bind_request_context, reset_request_context
-from fastapi_lens.instrumentation.handler import handler_instrumentation
-from fastapi_lens.instrumentation.sqlalchemy import (
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.context import bind_request_context, reset_request_context
+from fastapi_latensight.instrumentation.handler import handler_instrumentation
+from fastapi_latensight.instrumentation.sqlalchemy import (
     SQLALCHEMY_INTERNAL_EXECUTION_OPTION,
     SqlAlchemyInstrumentation,
 )
-from fastapi_lens.middleware import LensMiddleware
-from fastapi_lens.models import (
+from fastapi_latensight.middleware import LatensightMiddleware
+from fastapi_latensight.models import (
     RequestTrace,
     RequestTraceSnapshot,
     SegmentStatus,
     SegmentType,
 )
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 
 def make_collector() -> TraceCollector:
@@ -71,7 +71,7 @@ def test_sync_query_is_associated_with_the_handler_without_bind_values() -> None
     try:
         with (
             installed_handler(),
-            TestClient(LensMiddleware(app, store=store)) as client,
+            TestClient(LatensightMiddleware(app, store=store)) as client,
         ):
             response = client.get("/")
     finally:
@@ -120,7 +120,7 @@ def test_executemany_records_reliable_row_count() -> None:
         return {"ok": True}
 
     try:
-        with TestClient(LensMiddleware(app, store=store)) as client:
+        with TestClient(LatensightMiddleware(app, store=store)) as client:
             assert client.post("/").json() == {"ok": True}
     finally:
         instrumentation.unregister(engine, owner)
@@ -154,7 +154,7 @@ def test_failed_query_records_safe_error_and_preserves_exception_type() -> None:
     try:
         with (
             pytest.raises(OperationalError),
-            TestClient(LensMiddleware(app, store=store)) as client,
+            TestClient(LatensightMiddleware(app, store=store)) as client,
         ):
             client.get("/")
     finally:

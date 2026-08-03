@@ -4,8 +4,8 @@ from typing import Any, cast
 import pytest
 from sqlalchemy import create_engine
 
-from fastapi_lens import instrument_sqlalchemy, uninstrument_sqlalchemy
-from fastapi_lens.instrumentation.sqlalchemy import (
+from fastapi_latensight import instrument_sqlalchemy, uninstrument_sqlalchemy
+from fastapi_latensight.instrumentation.sqlalchemy import (
     SqlAlchemyInstrumentation,
     fingerprint_sql,
     normalize_sql,

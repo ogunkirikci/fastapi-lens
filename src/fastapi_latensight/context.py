@@ -3,15 +3,15 @@
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.models import TraceSegment
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.models import TraceSegment
 
 _current_collector: ContextVar[TraceCollector | None] = ContextVar(
-    "fastapi_lens_current_collector",
+    "fastapi_latensight_current_collector",
     default=None,
 )
 _segment_stack: ContextVar[tuple[str, ...]] = ContextVar(
-    "fastapi_lens_segment_stack",
+    "fastapi_latensight_segment_stack",
     default=(),
 )
 

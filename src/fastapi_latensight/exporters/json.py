@@ -4,7 +4,7 @@ import json
 from datetime import UTC, datetime
 from typing import Final
 
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     Diagnostic,
     FrozenJsonArray,
     FrozenJsonObject,

@@ -12,7 +12,7 @@ These results are an in-process regression reference, not a production capacity 
 - FastAPI: `0.141.1`
 - Starlette: `1.3.1`
 - SQLAlchemy: `2.0.51`
-- fastapi-lens: `0.1.0a0`
+- fastapi-latensight: `0.1.0a0`
 
 ## Methodology
 

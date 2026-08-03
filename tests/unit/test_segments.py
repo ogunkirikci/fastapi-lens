@@ -3,9 +3,9 @@ import inspect
 
 import pytest
 
-from fastapi_lens import current_trace, trace_segment
-from fastapi_lens.context import bind_request_context, reset_request_context
-from fastapi_lens.models import SegmentStatus
+from fastapi_latensight import current_trace, trace_segment
+from fastapi_latensight.context import bind_request_context, reset_request_context
+from fastapi_latensight.models import SegmentStatus
 
 from .test_context import make_collector
 

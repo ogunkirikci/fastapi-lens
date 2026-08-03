@@ -3,11 +3,11 @@ import json
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from fastapi_lens.exporters.json import trace_snapshot_to_dict
-from fastapi_lens.middleware import LensMiddleware
-from fastapi_lens.models import RequestTraceSnapshot
-from fastapi_lens.redaction import TraceSanitizer, TraceSanitizerConfig
-from fastapi_lens.segments import current_trace
+from fastapi_latensight.exporters.json import trace_snapshot_to_dict
+from fastapi_latensight.middleware import LatensightMiddleware
+from fastapi_latensight.models import RequestTraceSnapshot
+from fastapi_latensight.redaction import TraceSanitizer, TraceSanitizerConfig
+from fastapi_latensight.segments import current_trace
 
 
 class InspectingStore:
@@ -64,7 +64,7 @@ def test_redaction_and_limits_run_before_store_save() -> None:
             return {"ok": True}
 
     with TestClient(
-        LensMiddleware(
+        LatensightMiddleware(
             app,
             store=store,
             sanitizer=sanitizer,

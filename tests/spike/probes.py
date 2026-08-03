@@ -231,7 +231,7 @@ class SqlEvent:
 
 
 _active_sql_events: ContextVar[list[SqlEvent] | None] = ContextVar(
-    "fastapi_lens_spike_sql_events",
+    "fastapi_latensight_spike_sql_events",
     default=None,
 )
 
@@ -239,7 +239,7 @@ _active_sql_events: ContextVar[list[SqlEvent] | None] = ContextVar(
 class SqlCapture:
     def __init__(self) -> None:
         self._targets: dict[int, tuple[Engine, int]] = {}
-        self._stack_key = f"fastapi_lens_spike_{id(self)}"
+        self._stack_key = f"fastapi_latensight_spike_{id(self)}"
         self._lock = Lock()
 
     def register(self, engine: Engine | AsyncEngine) -> None:

@@ -1,4 +1,4 @@
-"""Validated fastapi-lens configuration."""
+"""Validated fastapi-latensight configuration."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -8,12 +8,12 @@ Environment = Literal["development", "test", "staging", "production"]
 
 
 @dataclass(slots=True, frozen=True)
-class LensConfig:
+class LatensightConfig:
     """Core runtime, storage, and dashboard security configuration."""
 
     enabled: bool = True
     dashboard_enabled: bool = False
-    dashboard_path: str = "/__lens__"
+    dashboard_path: str = "/__latensight__"
     include_routes: tuple[str, ...] = ("*",)
     exclude_routes: tuple[str, ...] = (
         "/docs",
@@ -21,7 +21,7 @@ class LensConfig:
         "/openapi.json",
         "/health",
         "/metrics",
-        "/__lens__*",
+        "/__latensight__*",
     )
     slow_request_threshold_ms: float = 250.0
     slow_dependency_threshold_ms: float = 100.0
@@ -65,8 +65,8 @@ class LensConfig:
 def enabled_from_environment(
     environment: Mapping[str, str],
 ) -> bool | None:
-    """Parse FASTAPI_LENS_ENABLED without silently accepting invalid values."""
-    raw_value = environment.get("FASTAPI_LENS_ENABLED")
+    """Parse FASTAPI_LATENSIGHT_ENABLED without silently accepting invalid values."""
+    raw_value = environment.get("FASTAPI_LATENSIGHT_ENABLED")
     if raw_value is None:
         return None
     normalized = raw_value.strip().lower()
@@ -75,6 +75,6 @@ def enabled_from_environment(
     if normalized in {"0", "false", "no", "off"}:
         return False
     raise ValueError(
-        "FASTAPI_LENS_ENABLED must be a boolean value "
+        "FASTAPI_LATENSIGHT_ENABLED must be a boolean value "
         "(true/false, yes/no, on/off, or 1/0)."
     )

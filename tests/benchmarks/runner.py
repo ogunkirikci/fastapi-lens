@@ -26,18 +26,18 @@ from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 from sqlalchemy import Engine, create_engine, text
 
-import fastapi_lens
-from fastapi_lens.config import LensConfig
-from fastapi_lens.dashboard import create_dashboard_app
-from fastapi_lens.exporters.json import trace_snapshot_to_json
-from fastapi_lens.instrumentation.dependencies import dependency_instrumentation
-from fastapi_lens.instrumentation.handler import handler_instrumentation
-from fastapi_lens.instrumentation.serialization import (
+import fastapi_latensight
+from fastapi_latensight.config import LatensightConfig
+from fastapi_latensight.dashboard import create_dashboard_app
+from fastapi_latensight.exporters.json import trace_snapshot_to_json
+from fastapi_latensight.instrumentation.dependencies import dependency_instrumentation
+from fastapi_latensight.instrumentation.handler import handler_instrumentation
+from fastapi_latensight.instrumentation.serialization import (
     serialization_instrumentation,
 )
-from fastapi_lens.instrumentation.sqlalchemy import sqlalchemy_instrumentation
-from fastapi_lens.middleware import LensMiddleware
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.instrumentation.sqlalchemy import sqlalchemy_instrumentation
+from fastapi_latensight.middleware import LatensightMiddleware
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 NANOSECONDS_PER_SECOND: Final = 1_000_000_000
 DEFAULT_SCENARIOS: Final = (
@@ -273,20 +273,20 @@ def build_application(
     )
     if scenario.dashboard_enabled:
         app.mount(
-            "/__lens__",
+            "/__latensight__",
             create_dashboard_app(
                 store,
-                config=LensConfig(
+                config=LatensightConfig(
                     dashboard_enabled=True,
                     environment="development",
                 ),
                 max_page_size=store_capacity,
             ),
         )
-    profiled_app = LensMiddleware(
+    profiled_app = LatensightMiddleware(
         app,
         store=store,
-        exclude_routes=("/__lens__*",),
+        exclude_routes=("/__latensight__*",),
     )
     return RunningApplication(
         app=profiled_app,
@@ -495,7 +495,7 @@ def environment_metadata() -> dict[str, str | int | None]:
         "starlette": starlette.__version__,
         "sqlalchemy": __import__("sqlalchemy").__version__,
         "jinja2": jinja2.__version__,
-        "fastapi_lens": fastapi_lens.__version__,
+        "fastapi_latensight": fastapi_latensight.__version__,
     }
 
 
@@ -551,7 +551,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- FastAPI: `{metadata['fastapi']}`",
         f"- Starlette: `{metadata['starlette']}`",
         f"- SQLAlchemy: `{metadata['sqlalchemy']}`",
-        f"- fastapi-lens: `{metadata['fastapi_lens']}`",
+        f"- fastapi-latensight: `{metadata['fastapi_latensight']}`",
         "",
         "## Methodology",
         "",

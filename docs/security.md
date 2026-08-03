@@ -27,7 +27,7 @@ asset, and mutation route:
 from typing import Annotated
 
 from fastapi import Header, HTTPException, status
-from fastapi_lens import Lens, LensConfig
+from fastapi_latensight import Latensight, LatensightConfig
 
 
 def require_operator(
@@ -40,9 +40,9 @@ def require_operator(
         )
 
 
-lens = Lens(
+profiler = Latensight(
     app,
-    config=LensConfig(
+    config=LatensightConfig(
         dashboard_enabled=True,
         environment="production",
         allow_in_production=True,
@@ -59,10 +59,10 @@ authorization boundary.
 
 Set `cookie_authenticated_dashboard=True` when a dashboard authorization
 dependency relies on cookies. Mutating requests must then submit the same token
-in the `fastapi_lens_csrf` cookie and `x-fastapi-lens-csrf` header.
+in the `fastapi_latensight_csrf` cookie and `x-fastapi-latensight-csrf` header.
 
 ```python
-lens = Lens(
+profiler = Latensight(
     app,
     config=config,
     dashboard_dependencies=(require_operator,),
@@ -116,4 +116,4 @@ authorization errors.
 - Confirm application error messages do not contain secrets.
 - Register only intended SQLAlchemy engines.
 - Remember that each worker exposes a different process-local buffer.
-- Call `lens.close()` during application shutdown to release global adapters.
+- Call `profiler.close()` during application shutdown to release global adapters.

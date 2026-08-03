@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fastapi-lens"
+name = "fastapi-latensight"
 version = "0.1.0a0"
 description = "A FastAPI-aware request execution profiler"
 readme = "README.md"
@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
-    { name = "fastapi-lens contributors" },
+    { name = "fastapi-latensight contributors" },
 ]
 keywords = [
     "fastapi",
@@ -31,7 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Typing :: Typed",
 ]
-urls = { Documentation = "https://github.com/ogunkirikci/fastapi-lens/tree/main/docs", Issues = "https://github.com/ogunkirikci/fastapi-lens/issues", Repository = "https://github.com/ogunkirikci/fastapi-lens" }
+urls = { Documentation = "https://github.com/ogunkirikci/fastapi-latensight/tree/main/docs", Issues = "https://github.com/ogunkirikci/fastapi-latensight/issues", Repository = "https://github.com/ogunkirikci/fastapi-latensight" }
 dependencies = [
     "fastapi>=0.121.0,<0.142.0",
     "jinja2>=3.1,<4",
@@ -55,13 +55,13 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/fastapi_lens"]
+packages = ["src/fastapi_latensight"]
 
 [tool.pytest.ini_options]
 addopts = [
     "--strict-config",
     "--strict-markers",
-    "--cov=fastapi_lens",
+    "--cov=fastapi_latensight",
     "--cov-branch",
     "--cov-report=term-missing",
     "--cov-report=xml",
@@ -72,7 +72,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["fastapi_lens"]
+source = ["fastapi_latensight"]
 
 [tool.coverage.report]
 exclude_also = [
@@ -101,7 +101,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["fastapi_lens"]
+known-first-party = ["fastapi_latensight"]
 
 [tool.mypy]
 python_version = "3.11"

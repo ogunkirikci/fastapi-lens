@@ -2,9 +2,9 @@
 
 ## 1. Project Overview
 
-**Working name:** `fastapi-lens`
+**Project name:** `fastapi-latensight`
 
-`fastapi-lens` is a request execution profiler that understands the FastAPI
+`fastapi-latensight` is a request execution profiler that understands the FastAPI
 request lifecycle and shows where an HTTP request spends its time.
 
 The long-term product vision covers:
@@ -56,7 +56,7 @@ It is still difficult to answer all of the following questions in one place:
 - How much wall time did a synchronous endpoint spend in the thread pool?
 - How should a streaming response be measured?
 
-`fastapi-lens` should answer these questions through a FastAPI-aware execution
+`fastapi-latensight` should answer these questions through a FastAPI-aware execution
 timeline while clearly distinguishing measured facts from heuristics.
 
 ---
@@ -147,7 +147,7 @@ The pure ASGI middleware must collect the following monotonic timestamps:
 
 | Field | Definition |
 |---|---|
-| `request_received_ns` | The Lens ASGI middleware receives the HTTP scope |
+| `request_received_ns` | The Latensight ASGI middleware receives the HTTP scope |
 | `response_started_ns` | Immediately before forwarding the first `http.response.start` event |
 | `response_body_completed_ns` | The downstream `send` await returns for the final body event with `more_body=False` |
 | `application_completed_ns` | The downstream ASGI application returns |
@@ -179,35 +179,35 @@ estimate missing timestamps.
 ### 6.1 Installation
 
 ```bash
-pip install fastapi-lens
+pip install fastapi-latensight
 ```
 
 Install SQLAlchemy support:
 
 ```bash
-pip install "fastapi-lens[sqlalchemy]"
+pip install "fastapi-latensight[sqlalchemy]"
 ```
 
 Install development dependencies:
 
 ```bash
-pip install "fastapi-lens[dev]"
+pip install "fastapi-latensight[dev]"
 ```
 
 ### 6.2 Basic usage
 
 ```python
 from fastapi import FastAPI
-from fastapi_lens import Lens
+from fastapi_latensight import Latensight
 
 app = FastAPI()
 
-lens = Lens(
+profiler = Latensight(
     app,
     enabled=True,
     dashboard_enabled=True,
     environment="development",
-    dashboard_path="/__lens__",
+    dashboard_path="/__latensight__",
     slow_request_threshold_ms=250,
 )
 ```
@@ -216,15 +216,15 @@ lens = Lens(
 
 ```python
 from fastapi import FastAPI
-from fastapi_lens import Lens, LensConfig
+from fastapi_latensight import Latensight, LatensightConfig
 
 app = FastAPI()
 
-config = LensConfig(
+config = LatensightConfig(
     enabled=True,
     dashboard_enabled=True,
     environment="development",
-    dashboard_path="/__lens__",
+    dashboard_path="/__latensight__",
     include_routes=["/api/*"],
     exclude_routes=["/health", "/metrics", "/docs", "/openapi.json"],
     slow_request_threshold_ms=250,
@@ -234,8 +234,8 @@ config = LensConfig(
     max_traces=500,
 )
 
-lens = Lens(app, config=config)
-lens.instrument_sqlalchemy(engine)
+profiler = Latensight(app, config=config)
+profiler.instrument_sqlalchemy(engine)
 ```
 
 `capture_sql=True` enables SQL support but does not discover engines. Every
@@ -324,7 +324,7 @@ Example JSON:
 The library must attach to an existing FastAPI application through one object:
 
 ```python
-Lens(app)
+Latensight(app)
 ```
 
 ### FR-002 — Request traces
@@ -349,7 +349,7 @@ Every profiled request must produce a unique trace with at least:
 Users must be able to define include and exclude patterns:
 
 ```python
-Lens(
+Latensight(
     app,
     include_routes=["/api/*"],
     exclude_routes=["/health", "/metrics"],
@@ -420,12 +420,12 @@ Bind values are not stored by default.
 SQL capture applies only to explicitly registered engines:
 
 ```python
-lens.instrument_sqlalchemy(engine)
-lens.uninstrument_sqlalchemy(engine)
+profiler.instrument_sqlalchemy(engine)
+profiler.uninstrument_sqlalchemy(engine)
 ```
 
 For `AsyncEngine`, listeners target `engine.sync_engine`. Registration is
-idempotent and reference-counted. Multiple Lens instances in the same process
+idempotent and reference-counted. Multiple Latensight instances in the same process
 must not disable one another.
 
 Connection pre-ping and framework-internal operations must not be classified as
@@ -476,10 +476,10 @@ The dashboard must include:
 ### FR-010 — JSON API
 
 ```text
-GET /__lens__/api/traces
-GET /__lens__/api/traces/{trace_id}
-GET /__lens__/api/routes
-DELETE /__lens__/api/traces
+GET /__latensight__/api/traces
+GET /__latensight__/api/traces/{trace_id}
+GET /__latensight__/api/routes
+DELETE /__latensight__/api/traces
 ```
 
 List endpoints require stable ordering, validated pagination, and a maximum page
@@ -501,13 +501,13 @@ change the application's existing exception behavior.
 The profiler can be disabled through runtime configuration or:
 
 ```bash
-FASTAPI_LENS_ENABLED=false
+FASTAPI_LATENSIGHT_ENABLED=false
 ```
 
 Precedence:
 
 ```text
-runtime enable/disable > explicit LensConfig > environment variable > default
+runtime enable/disable > explicit LatensightConfig > environment variable > default
 ```
 
 Disabling stops creation of new traces. Active traces are allowed to finalize
@@ -518,7 +518,7 @@ safely.
 Asynchronous usage:
 
 ```python
-from fastapi_lens import current_trace
+from fastapi_latensight import current_trace
 
 async with current_trace.segment("calculate_price"):
     result = await calculate_price()
@@ -636,11 +636,11 @@ fixtures that explicitly verify Unicode or localization behavior.
 ## 10. Proposed Architecture
 
 ```text
-fastapi-lens/
+fastapi-latensight/
 ├── src/
-│   └── fastapi_lens/
+│   └── fastapi_latensight/
 │       ├── __init__.py
-│       ├── lens.py
+│       ├── profiler.py
 │       ├── config.py
 │       ├── context.py
 │       ├── models.py
@@ -867,11 +867,11 @@ The active collector and segment stack use separate context variables:
 from contextvars import ContextVar
 
 _current_collector: ContextVar["TraceCollector | None"] = ContextVar(
-    "fastapi_lens_current_collector",
+    "fastapi_latensight_current_collector",
     default=None,
 )
 _segment_stack: ContextVar[tuple[str, ...]] = ContextVar(
-    "fastapi_lens_segment_stack",
+    "fastapi_latensight_segment_stack",
     default=(),
 )
 ```
@@ -923,7 +923,7 @@ Any global patch must be:
 
 - Isolated behind a versioned adapter
 - Idempotent and reference-counted
-- Safe with multiple applications and Lens instances
+- Safe with multiple applications and Latensight instances
 - Restored only when the last registration is removed
 - Thread-safe during install and restore
 - Covered by compatibility tests
@@ -1055,10 +1055,10 @@ from typing import Literal
 
 
 @dataclass(slots=True)
-class LensConfig:
+class LatensightConfig:
     enabled: bool = True
     dashboard_enabled: bool = False
-    dashboard_path: str = "/__lens__"
+    dashboard_path: str = "/__latensight__"
     include_routes: list[str] = field(default_factory=lambda: ["*"])
     exclude_routes: list[str] = field(
         default_factory=lambda: [
@@ -1067,7 +1067,7 @@ class LensConfig:
             "/openapi.json",
             "/health",
             "/metrics",
-            "/__lens__*",
+            "/__latensight__*",
         ]
     )
     slow_request_threshold_ms: float = 250.0
@@ -1093,7 +1093,7 @@ environment. Staging and production additionally require
 The library must not attempt to infer the deployment environment.
 
 Environment parsing belongs in a separate tested config loader. v0.1 supports
-at least `FASTAPI_LENS_ENABLED`. Full environment-variable coverage is deferred
+at least `FASTAPI_LATENSIGHT_ENABLED`. Full environment-variable coverage is deferred
 to v0.2. Invalid values must not silently fall back to defaults.
 
 ---
@@ -1131,9 +1131,9 @@ Sensitive field names:
 - Cookie-based authentication requires CSRF protection for mutations.
 
 ```python
-Lens(
+Latensight(
     app,
-    config=LensConfig(
+    config=LatensightConfig(
         dashboard_enabled=True,
         environment="staging",
         allow_in_production=True,
@@ -1209,18 +1209,18 @@ represent other workers.
 ## 18. Public API Draft
 
 ```python
-from fastapi_lens import Lens, LensConfig
+from fastapi_latensight import Latensight, LatensightConfig
 
-lens = Lens(app, config=LensConfig(...))
+profiler = Latensight(app, config=LatensightConfig(...))
 
-lens.enable()
-lens.disable()
-lens.instrument_sqlalchemy(engine)
-lens.uninstrument_sqlalchemy(engine)
+profiler.enable()
+profiler.disable()
+profiler.instrument_sqlalchemy(engine)
+profiler.uninstrument_sqlalchemy(engine)
 
-await lens.clear_traces()
-trace = await lens.get_trace(trace_id)
-traces = await lens.list_traces(limit=100, offset=0)
+await profiler.clear_traces()
+trace = await profiler.get_trace(trace_id)
+traces = await profiler.list_traces(limit=100, offset=0)
 ```
 
 Enable and disable are synchronous policy changes. Store access is
@@ -1229,7 +1229,7 @@ asynchronous. Active requests still finalize after disable.
 Decorator:
 
 ```python
-from fastapi_lens import trace_segment
+from fastapi_latensight import trace_segment
 
 
 @trace_segment("calculate_invoice")
@@ -1240,7 +1240,7 @@ async def calculate_invoice(...):
 Context manager:
 
 ```python
-from fastapi_lens import current_trace
+from fastapi_latensight import current_trace
 
 async with current_trace.segment("external_operation"):
     ...
@@ -1345,7 +1345,7 @@ Future stores:
 - SQLAlchemy sync engine
 - SQLAlchemy async engine
 - SQLAlchemy pre-ping filtering
-- Multiple applications and Lens instances
+- Multiple applications and Latensight instances
 - Idempotent install and restore
 - Concurrent request isolation
 - Dashboard authorization
@@ -1371,7 +1371,7 @@ supported. Supported ranges must be blocking CI jobs.
 Scenarios:
 
 1. Plain FastAPI baseline
-2. Lens enabled with minimum capture
+2. Latensight enabled with minimum capture
 3. Dependency capture enabled
 4. SQL capture enabled
 5. Dashboard enabled but idle
@@ -1393,7 +1393,7 @@ Report:
 ## 21. MVP Acceptance Criteria
 
 - [x] The package installs successfully.
-- [x] `Lens(app)` attaches to FastAPI.
+- [x] `Latensight(app)` attaches to FastAPI.
 - [x] Pure ASGI middleware records all lifecycle checkpoints correctly.
 - [x] Missing responses and disconnects do not produce invented durations.
 - [x] Async handlers are profiled correctly.
@@ -1760,7 +1760,7 @@ feat: [FL-12] instrument nested dependencies
 ## 25. Initial Codex Prompt
 
 ```text
-You are implementing an open-source Python package named `fastapi-lens`.
+You are implementing an open-source Python package named `fastapi-latensight`.
 
 Read `docs/FASTAPI_REQUEST_EXECUTION_PROFILER.md` completely before making
 changes.
@@ -1776,7 +1776,7 @@ Requirements:
 - Treat the FastAPI version range as provisional. TASK-001A will determine the
   supported adapter range before release.
 - Configure pytest, pytest-asyncio, coverage, Ruff, and mypy.
-- Add a minimal `fastapi_lens` package with a public `__version__`.
+- Add a minimal `fastapi_latensight` package with a public `__version__`.
 - Add a smoke test that imports the package.
 - Add GitHub Actions for lint, type checking, and tests.
 - Use the MIT license.

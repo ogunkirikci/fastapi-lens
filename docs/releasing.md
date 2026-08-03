@@ -15,7 +15,7 @@ reviewers for the production environment.
 Configure a Trusted Publisher on each index with:
 
 - Owner: `ogunkirikci`
-- Repository: `fastapi-lens`
+- Repository: `fastapi-latensight`
 - TestPyPI workflow: `publish-testpypi.yml`
 - PyPI workflow: `publish-pypi.yml`
 - Environment: `testpypi` or `pypi`
@@ -25,7 +25,7 @@ configuration.
 
 ## Prepare a release
 
-1. Update the version in `pyproject.toml` and `src/fastapi_lens/__init__.py`.
+1. Update the version in `pyproject.toml` and `src/fastapi_latensight/__init__.py`.
 2. Move relevant changelog entries from `Unreleased` into a dated version.
 3. Run the full test, lint, format, type, build, and metadata checks.
 4. Build from a clean worktree and inspect both the wheel and source archive.

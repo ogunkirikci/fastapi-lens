@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from fastapi_lens.models import Diagnostic, RequestTrace
+from fastapi_latensight.models import Diagnostic, RequestTrace
 
 
 def make_trace(

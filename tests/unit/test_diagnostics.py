@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from fastapi_lens.diagnostics import (
+from fastapi_latensight.diagnostics import (
     DiagnosticConfig,
     DiagnosticEngine,
     ExpensiveSerializationRule,
@@ -12,7 +12,7 @@ from fastapi_lens.diagnostics import (
     SlowDependencyRule,
     SlowRequestRule,
 )
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     DependencyCacheStatus,
     Diagnostic,
     LogicalDependencyNode,

@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from fastapi_lens.models import Diagnostic, RequestTraceSnapshot
+from fastapi_latensight.models import Diagnostic, RequestTraceSnapshot
 
 
 class DiagnosticRule(Protocol):

@@ -6,15 +6,15 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI
 
-from fastapi_lens import Lens, LensConfig
+from fastapi_latensight import Latensight, LatensightConfig
 
-lens: Lens
+profiler: Latensight
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
-    lens.close()
+    profiler.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -54,9 +54,9 @@ async def profile(
     }
 
 
-lens = Lens(
+profiler = Latensight(
     app,
-    config=LensConfig(
+    config=LatensightConfig(
         dashboard_enabled=True,
         environment="development",
         capture_dependencies=True,

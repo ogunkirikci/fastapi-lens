@@ -10,7 +10,7 @@ from typing import Any, Final, TypeAlias
 from fastapi.params import Depends as DependsParameter
 from starlette.responses import Response
 
-from fastapi_lens.config import LensConfig
+from fastapi_latensight.config import LatensightConfig
 
 AuthorizationDependency: TypeAlias = Callable[..., Any] | DependsParameter
 
@@ -36,7 +36,7 @@ class CsrfValidationError(PermissionError):
 
 
 def validate_dashboard_configuration(
-    config: LensConfig,
+    config: LatensightConfig,
     *,
     authorization_dependencies: Sequence[AuthorizationDependency] = (),
 ) -> None:
@@ -72,8 +72,8 @@ class CsrfPolicy:
     def __init__(
         self,
         *,
-        cookie_name: str = "fastapi_lens_csrf",
-        header_name: str = "x-fastapi-lens-csrf",
+        cookie_name: str = "fastapi_latensight_csrf",
+        header_name: str = "x-fastapi-latensight-csrf",
     ) -> None:
         self.cookie_name = cookie_name
         self.header_name = header_name.lower()

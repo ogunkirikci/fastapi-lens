@@ -12,8 +12,8 @@ from uuid import uuid4
 import fastapi
 import fastapi.routing
 
-from fastapi_lens.context import current_collector, enter_segment, exit_segment
-from fastapi_lens.models import (
+from fastapi_latensight.context import current_collector, enter_segment, exit_segment
+from fastapi_latensight.models import (
     SegmentStatus,
     SegmentType,
     TraceError,

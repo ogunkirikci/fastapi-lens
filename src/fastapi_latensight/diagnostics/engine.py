@@ -3,8 +3,8 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from fastapi_lens.diagnostics.base import DiagnosticRule
-from fastapi_lens.diagnostics.rules import (
+from fastapi_latensight.diagnostics.base import DiagnosticRule
+from fastapi_latensight.diagnostics.rules import (
     ExpensiveSerializationRule,
     IntegrityRule,
     PossibleNPlusOneRule,
@@ -12,7 +12,7 @@ from fastapi_lens.diagnostics.rules import (
     SlowDependencyRule,
     SlowRequestRule,
 )
-from fastapi_lens.models import Diagnostic, RequestTraceSnapshot
+from fastapi_latensight.models import Diagnostic, RequestTraceSnapshot
 
 
 @dataclass(slots=True, frozen=True)

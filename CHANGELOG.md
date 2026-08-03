@@ -13,7 +13,7 @@ No changes yet.
 
 ### Added
 
-- Public `Lens` orchestration with runtime enable and disable controls, async
+- Public `Latensight` orchestration with runtime enable and disable controls, async
   trace-store access, and explicit SQLAlchemy registration.
 - Pure ASGI request lifecycle tracing with complete, incomplete, streaming,
   disconnect, cancellation, and post-response behavior.
@@ -47,5 +47,5 @@ No changes yet.
   dashboard responses.
 - SQL bind exclusion and sensitive-field redaction before storage.
 
-[Unreleased]: https://github.com/ogunkirikci/fastapi-lens/compare/v0.1.0a0...HEAD
-[0.1.0a0]: https://github.com/ogunkirikci/fastapi-lens/releases/tag/v0.1.0a0
+[Unreleased]: https://github.com/ogunkirikci/fastapi-latensight/compare/v0.1.0a0...HEAD
+[0.1.0a0]: https://github.com/ogunkirikci/fastapi-latensight/releases/tag/v0.1.0a0

@@ -10,14 +10,14 @@ from uuid import uuid4
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.context import bind_request_context, reset_request_context
-from fastapi_lens.diagnostics.base import DiagnosticRule
-from fastapi_lens.models import RequestTrace, TraceError
-from fastapi_lens.redaction import TraceSanitizer
-from fastapi_lens.storage.base import TraceStore
-from fastapi_lens.storage.memory import MemoryTraceStore
-from fastapi_lens.utils.patterns import RouteFilter
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.context import bind_request_context, reset_request_context
+from fastapi_latensight.diagnostics.base import DiagnosticRule
+from fastapi_latensight.models import RequestTrace, TraceError
+from fastapi_latensight.redaction import TraceSanitizer
+from fastapi_latensight.storage.base import TraceStore
+from fastapi_latensight.storage.memory import MemoryTraceStore
+from fastapi_latensight.utils.patterns import RouteFilter
 
 
 def _utc_now() -> datetime:
@@ -48,7 +48,7 @@ class ProfilerState:
             self._enabled = False
 
 
-class LensMiddleware:
+class LatensightMiddleware:
     """Collect request lifecycle traces without BaseHTTPMiddleware."""
 
     def __init__(

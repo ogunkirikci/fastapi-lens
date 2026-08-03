@@ -1,4 +1,4 @@
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     SegmentStatus,
     SegmentType,
     TraceError,

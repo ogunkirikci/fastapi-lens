@@ -5,10 +5,10 @@ import pytest
 from fastapi import Depends
 from starlette.responses import Response
 
-from fastapi_lens import LensConfig
-from fastapi_lens.config import enabled_from_environment
-from fastapi_lens.exporters.json import trace_snapshot_to_json
-from fastapi_lens.models import (
+from fastapi_latensight import LatensightConfig
+from fastapi_latensight.config import enabled_from_environment
+from fastapi_latensight.exporters.json import trace_snapshot_to_json
+from fastapi_latensight.models import (
     DependencyCacheStatus,
     Diagnostic,
     LogicalDependencyNode,
@@ -18,13 +18,13 @@ from fastapi_lens.models import (
     TraceError,
     TraceSegment,
 )
-from fastapi_lens.redaction import (
+from fastapi_latensight.redaction import (
     REDACTED_VALUE,
     TraceSanitizer,
     TraceSanitizerConfig,
     truncate_text,
 )
-from fastapi_lens.security import (
+from fastapi_latensight.security import (
     DEFAULT_CONTENT_SECURITY_POLICY,
     CsrfPolicy,
     CsrfValidationError,
@@ -233,35 +233,37 @@ def test_enabled_environment_values_are_strictly_parsed(
     raw_value: str,
     expected: bool,
 ) -> None:
-    assert enabled_from_environment({"FASTAPI_LENS_ENABLED": raw_value}) is expected
+    assert (
+        enabled_from_environment({"FASTAPI_LATENSIGHT_ENABLED": raw_value}) is expected
+    )
 
 
 def test_missing_and_invalid_enabled_environment_values() -> None:
     assert enabled_from_environment({}) is None
     with pytest.raises(
         ValueError,
-        match=r"FASTAPI_LENS_ENABLED must be a boolean value",
+        match=r"FASTAPI_LATENSIGHT_ENABLED must be a boolean value",
     ):
-        enabled_from_environment({"FASTAPI_LENS_ENABLED": "sometimes"})
+        enabled_from_environment({"FASTAPI_LATENSIGHT_ENABLED": "sometimes"})
 
 
-def test_lens_config_is_secure_by_default_and_validates_limits() -> None:
-    config = LensConfig()
+def test_latensight_config_is_secure_by_default_and_validates_limits() -> None:
+    config = LatensightConfig()
 
     assert config.dashboard_enabled is False
     assert config.environment is None
     assert config.allow_in_production is False
 
     with pytest.raises(ValueError, match=r"dashboard_path must start"):
-        LensConfig(dashboard_path="lens")
+        LatensightConfig(dashboard_path="profiler")
     with pytest.raises(ValueError, match=r"must not replace"):
-        LensConfig(dashboard_path="/")
+        LatensightConfig(dashboard_path="/")
     with pytest.raises(ValueError, match=r"max_trace_bytes must be greater"):
-        LensConfig(max_trace_bytes=0)
+        LatensightConfig(max_trace_bytes=0)
     with pytest.raises(ValueError, match=r"max_api_page_size must be greater"):
-        LensConfig(max_api_page_size=0)
+        LatensightConfig(max_api_page_size=0)
     with pytest.raises(ValueError, match=r"slow_request_threshold_ms"):
-        LensConfig(slow_request_threshold_ms=-1)
+        LatensightConfig(slow_request_threshold_ms=-1)
 
 
 def require_admin() -> None:
@@ -269,19 +271,19 @@ def require_admin() -> None:
 
 
 def test_dashboard_policy_requires_explicit_environment() -> None:
-    validate_dashboard_configuration(LensConfig())
+    validate_dashboard_configuration(LatensightConfig())
 
     with pytest.raises(
         DashboardSecurityError,
         match=r"requires an explicit environment",
     ):
-        validate_dashboard_configuration(LensConfig(dashboard_enabled=True))
+        validate_dashboard_configuration(LatensightConfig(dashboard_enabled=True))
 
     validate_dashboard_configuration(
-        LensConfig(dashboard_enabled=True, environment="development")
+        LatensightConfig(dashboard_enabled=True, environment="development")
     )
     validate_dashboard_configuration(
-        LensConfig(dashboard_enabled=True, environment="test")
+        LatensightConfig(dashboard_enabled=True, environment="test")
     )
 
 
@@ -294,13 +296,13 @@ def test_deployed_dashboard_requires_override_and_authorization(
         match=r"allow_in_production=True",
     ):
         validate_dashboard_configuration(
-            LensConfig(
+            LatensightConfig(
                 dashboard_enabled=True,
                 environment=environment,  # type: ignore[arg-type]
             )
         )
 
-    config = LensConfig(
+    config = LatensightConfig(
         dashboard_enabled=True,
         environment=environment,  # type: ignore[arg-type]
         allow_in_production=True,
@@ -348,8 +350,8 @@ def test_csrf_policy_only_requires_matching_tokens_for_cookie_mutations() -> Non
     )
     policy.validate(
         method="DELETE",
-        headers={"X-FastAPI-Lens-CSRF": token},
-        cookies={"fastapi_lens_csrf": token},
+        headers={"X-FastAPI-Latensight-CSRF": token},
+        cookies={"fastapi_latensight_csrf": token},
         cookie_authenticated=True,
     )
 
@@ -359,8 +361,8 @@ def test_csrf_policy_only_requires_matching_tokens_for_cookie_mutations() -> Non
     ):
         policy.validate(
             method="POST",
-            headers={"x-fastapi-lens-csrf": "wrong"},
-            cookies={"fastapi_lens_csrf": token},
+            headers={"x-fastapi-latensight-csrf": "wrong"},
+            cookies={"fastapi_latensight_csrf": token},
             cookie_authenticated=True,
         )
 

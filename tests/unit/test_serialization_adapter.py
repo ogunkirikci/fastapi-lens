@@ -5,10 +5,12 @@ from datetime import UTC, datetime
 import fastapi
 import pytest
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.context import bind_request_context, reset_request_context
-from fastapi_lens.instrumentation.serialization import SerializationInstrumentation
-from fastapi_lens.models import RequestTrace, SegmentStatus
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.context import bind_request_context, reset_request_context
+from fastapi_latensight.instrumentation.serialization import (
+    SerializationInstrumentation,
+)
+from fastapi_latensight.models import RequestTrace, SegmentStatus
 
 
 def make_collector() -> TraceCollector:

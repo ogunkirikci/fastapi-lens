@@ -4,10 +4,10 @@ from datetime import UTC, datetime
 
 import pytest
 
-from fastapi_lens.exporters.json import TraceJsonSizeError, trace_snapshot_to_json
-from fastapi_lens.models import RequestTrace, RequestTraceSnapshot
-from fastapi_lens.storage.base import TraceStore
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.exporters.json import TraceJsonSizeError, trace_snapshot_to_json
+from fastapi_latensight.models import RequestTrace, RequestTraceSnapshot
+from fastapi_latensight.storage.base import TraceStore
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 
 def make_snapshot(

@@ -22,9 +22,9 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.context import current_collector, enter_segment, exit_segment
-from fastapi_lens.models import (
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.context import current_collector, enter_segment, exit_segment
+from fastapi_latensight.models import (
     DependencyCacheStatus,
     DependencyScope,
     JsonValue,

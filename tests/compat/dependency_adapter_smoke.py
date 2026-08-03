@@ -7,10 +7,10 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from fastapi_lens.instrumentation.dependencies import dependency_instrumentation
-from fastapi_lens.middleware import LensMiddleware
-from fastapi_lens.models import DependencyCacheStatus, SegmentType
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.instrumentation.dependencies import dependency_instrumentation
+from fastapi_latensight.middleware import LatensightMiddleware
+from fastapi_latensight.models import DependencyCacheStatus, SegmentType
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 
 def run() -> None:
@@ -39,7 +39,7 @@ def run() -> None:
     owner = object()
     dependency_instrumentation.install(owner)
     try:
-        with TestClient(LensMiddleware(app, store=store)) as client:
+        with TestClient(LatensightMiddleware(app, store=store)) as client:
             response = client.get("/")
     finally:
         dependency_instrumentation.remove(owner)

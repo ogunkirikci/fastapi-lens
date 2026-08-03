@@ -2,7 +2,7 @@
 
 from threading import RLock
 
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     LogicalDependencyNode,
     RequestTrace,
     RequestTraceSnapshot,

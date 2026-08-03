@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from itertools import pairwise
 from typing import TypeAlias
 
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     Diagnostic,
     FrozenJsonValue,
     RequestTraceSnapshot,
@@ -14,7 +14,7 @@ from fastapi_lens.models import (
     SegmentType,
     TraceSegmentSnapshot,
 )
-from fastapi_lens.utils.timing import (
+from fastapi_latensight.utils.timing import (
     InvalidIntervalError,
     interval_union_duration_ns,
 )

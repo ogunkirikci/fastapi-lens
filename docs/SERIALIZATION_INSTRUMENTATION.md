@@ -1,6 +1,6 @@
 # Serialization Instrumentation
 
-`fastapi-lens` records one combined serialization segment around FastAPI's
+`fastapi-latensight` records one combined serialization segment around FastAPI's
 `serialize_response` boundary. The segment includes response-model validation
 and encoding performed by that hook. It does not claim separate validation,
 encoding, or rendering durations.

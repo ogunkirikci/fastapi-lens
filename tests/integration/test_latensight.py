@@ -7,14 +7,14 @@ from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 
-from fastapi_lens import Lens, LensConfig
-from fastapi_lens.instrumentation import (
+from fastapi_latensight import Latensight, LatensightConfig
+from fastapi_latensight.instrumentation import (
     dependency_instrumentation,
     handler_instrumentation,
     serialization_instrumentation,
 )
-from fastapi_lens.instrumentation.sqlalchemy import sqlalchemy_instrumentation
-from fastapi_lens.models import SegmentType
+from fastapi_latensight.instrumentation.sqlalchemy import sqlalchemy_instrumentation
+from fastapi_latensight.models import SegmentType
 
 
 @pytest.fixture(autouse=True)
@@ -30,27 +30,29 @@ async def request_value() -> int:
     return 42
 
 
-def profiled_app(*, config: LensConfig | None = None) -> tuple[FastAPI, Lens]:
+def profiled_app(
+    *, config: LatensightConfig | None = None
+) -> tuple[FastAPI, Latensight]:
     app = FastAPI()
 
     @app.get("/items", response_model=dict[str, int])
     async def items(value: Annotated[int, Depends(request_value)]) -> dict[str, int]:
         return {"value": value}
 
-    lens = Lens(app, config=config)
-    return app, lens
+    profiler = Latensight(app, config=config)
+    return app, profiler
 
 
-def test_lens_attaches_complete_default_instrumentation() -> None:
-    app, lens = profiled_app()
+def test_latensight_attaches_complete_default_instrumentation() -> None:
+    app, profiler = profiled_app()
 
     try:
         with TestClient(app) as client:
             response = client.get("/items")
 
-        traces = asyncio.run(lens.list_traces())
+        traces = asyncio.run(profiler.list_traces())
     finally:
-        lens.close()
+        profiler.close()
 
     assert response.json() == {"value": 42}
     assert len(traces) == 1
@@ -66,44 +68,44 @@ def test_lens_attaches_complete_default_instrumentation() -> None:
 
 
 def test_runtime_disable_and_enable_only_affect_new_requests() -> None:
-    app, lens = profiled_app()
+    app, profiler = profiled_app()
 
     try:
         with TestClient(app) as client:
-            lens.disable()
+            profiler.disable()
             client.get("/items")
-            lens.enable()
+            profiler.enable()
             client.get("/items")
 
-        traces = asyncio.run(lens.list_traces())
+        traces = asyncio.run(profiler.list_traces())
     finally:
-        lens.close()
+        profiler.close()
 
     assert len(traces) == 1
-    assert lens.enabled is False
+    assert profiler.enabled is False
 
 
 def test_store_access_and_clear_are_exposed_as_async_operations() -> None:
-    app, lens = profiled_app()
+    app, profiler = profiled_app()
 
     try:
         with TestClient(app) as client:
             client.get("/items")
 
-        traces = asyncio.run(lens.list_traces(limit=1))
-        selected = asyncio.run(lens.get_trace(traces[0].id))
-        asyncio.run(lens.clear_traces())
-        remaining = asyncio.run(lens.list_traces())
+        traces = asyncio.run(profiler.list_traces(limit=1))
+        selected = asyncio.run(profiler.get_trace(traces[0].id))
+        asyncio.run(profiler.clear_traces())
+        remaining = asyncio.run(profiler.list_traces())
     finally:
-        lens.close()
+        profiler.close()
 
     assert selected == traces[0]
     assert remaining == []
 
 
 def test_dashboard_is_mounted_and_excluded_from_trace_capture() -> None:
-    app, lens = profiled_app(
-        config=LensConfig(
+    app, profiler = profiled_app(
+        config=LatensightConfig(
             dashboard_enabled=True,
             environment="development",
             dashboard_path="/profiler",
@@ -116,12 +118,12 @@ def test_dashboard_is_mounted_and_excluded_from_trace_capture() -> None:
             dashboard = client.get("/profiler/")
             client.get("/profiler/api/routes")
 
-        traces = asyncio.run(lens.list_traces())
+        traces = asyncio.run(profiler.list_traces())
     finally:
-        lens.close()
+        profiler.close()
 
     assert dashboard.status_code == 200
-    assert "fastapi-lens" in dashboard.text
+    assert "fastapi-latensight" in dashboard.text
     assert len(traces) == 1
     assert traces[0].path == "/items"
 
@@ -136,11 +138,11 @@ def require_admin(
         )
 
 
-def test_dashboard_authorization_is_forwarded_by_lens() -> None:
+def test_dashboard_authorization_is_forwarded_by_latensight() -> None:
     app = FastAPI()
-    lens = Lens(
+    profiler = Latensight(
         app,
-        config=LensConfig(
+        config=LatensightConfig(
             dashboard_enabled=True,
             environment="production",
             allow_in_production=True,
@@ -150,13 +152,13 @@ def test_dashboard_authorization_is_forwarded_by_lens() -> None:
 
     try:
         with TestClient(app) as client:
-            unauthorized = client.get("/__lens__/")
+            unauthorized = client.get("/__latensight__/")
             authorized = client.get(
-                "/__lens__/",
+                "/__latensight__/",
                 headers={"x-admin": "allowed"},
             )
     finally:
-        lens.close()
+        profiler.close()
 
     assert unauthorized.status_code == 401
     assert authorized.status_code == 200
@@ -177,21 +179,21 @@ def test_explicit_sql_registration_uses_the_configured_statement_limit() -> None
             ).scalar_one()
         return {"value": value}
 
-    lens = Lens(
+    profiler = Latensight(
         app,
-        config=LensConfig(
+        config=LatensightConfig(
             capture_sql=True,
             max_sql_length=12,
         ),
     )
-    lens.instrument_sqlalchemy(engine)
+    profiler.instrument_sqlalchemy(engine)
 
     try:
         with TestClient(app) as client:
             client.get("/query")
-        trace = asyncio.run(lens.list_traces())[0]
+        trace = asyncio.run(profiler.list_traces())[0]
     finally:
-        lens.close()
+        profiler.close()
         engine.dispose()
 
     query_segment = next(
@@ -204,73 +206,76 @@ def test_explicit_sql_registration_uses_the_configured_statement_limit() -> None
 
 
 def test_sql_registration_fails_when_capture_is_disabled() -> None:
-    _app, lens = profiled_app(config=LensConfig(capture_sql=False))
+    _app, profiler = profiled_app(config=LatensightConfig(capture_sql=False))
     engine = create_engine("sqlite://")
 
     try:
         with pytest.raises(RuntimeError, match=r"SQL capture is disabled"):
-            lens.instrument_sqlalchemy(engine)
+            profiler.instrument_sqlalchemy(engine)
     finally:
-        lens.close()
+        profiler.close()
         engine.dispose()
 
 
-def test_multiple_lens_instances_share_and_release_global_adapters() -> None:
-    _first_app, first_lens = profiled_app()
-    second_app, second_lens = profiled_app()
+def test_multiple_latensight_instances_share_and_release_global_adapters() -> None:
+    _first_app, first_profiler = profiled_app()
+    second_app, second_profiler = profiled_app()
 
     try:
         assert handler_instrumentation.installed is True
-        first_lens.close()
+        first_profiler.close()
         assert handler_instrumentation.installed is True
 
         with TestClient(second_app) as client:
             client.get("/items")
-        assert len(asyncio.run(second_lens.list_traces())) == 1
+        assert len(asyncio.run(second_profiler.list_traces())) == 1
     finally:
-        first_lens.close()
-        second_lens.close()
+        first_profiler.close()
+        second_profiler.close()
 
     assert handler_instrumentation.installed is False
 
 
-def test_lens_rejects_duplicate_or_late_attachment() -> None:
-    app, lens = profiled_app()
+def test_latensight_rejects_duplicate_or_late_attachment() -> None:
+    app, profiler = profiled_app()
     try:
         with pytest.raises(RuntimeError, match=r"already attached"):
-            Lens(app)
+            Latensight(app)
     finally:
-        lens.close()
+        profiler.close()
 
     started_app = FastAPI()
     with TestClient(started_app):
         pass
     with pytest.raises(RuntimeError, match=r"before application startup"):
-        Lens(started_app)
+        Latensight(started_app)
 
 
-def test_closed_lens_cannot_be_reenabled() -> None:
-    _, lens = profiled_app()
+def test_closed_latensight_cannot_be_reenabled() -> None:
+    _, profiler = profiled_app()
 
-    lens.close()
-    lens.close()
+    profiler.close()
+    profiler.close()
 
-    with pytest.raises(RuntimeError, match=r"Lens is closed"):
-        lens.enable()
+    with pytest.raises(RuntimeError, match=r"Latensight is closed"):
+        profiler.enable()
 
 
 def test_environment_enablement_applies_only_without_explicit_config(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("FASTAPI_LENS_ENABLED", "false")
+    monkeypatch.setenv("FASTAPI_LATENSIGHT_ENABLED", "false")
     environment_app = FastAPI()
-    environment_lens = Lens(environment_app)
+    environment_profiler = Latensight(environment_app)
     explicit_app = FastAPI()
-    explicit_lens = Lens(explicit_app, config=LensConfig(enabled=True))
+    explicit_profiler = Latensight(
+        explicit_app,
+        config=LatensightConfig(enabled=True),
+    )
 
     try:
-        assert environment_lens.enabled is False
-        assert explicit_lens.enabled is True
+        assert environment_profiler.enabled is False
+        assert explicit_profiler.enabled is True
     finally:
-        environment_lens.close()
-        explicit_lens.close()
+        environment_profiler.close()
+        explicit_profiler.close()

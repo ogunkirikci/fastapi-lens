@@ -1,4 +1,4 @@
-from fastapi_lens.utils.patterns import RouteFilter
+from fastapi_latensight.utils.patterns import RouteFilter
 
 
 def test_route_filter_applies_excludes_before_includes() -> None:

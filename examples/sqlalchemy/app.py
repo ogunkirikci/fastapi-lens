@@ -6,13 +6,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import Engine, create_engine, text
 
-from fastapi_lens import Lens, LensConfig
+from fastapi_latensight import Latensight, LatensightConfig
 
 engine: Engine = create_engine(
-    "sqlite:///fastapi_lens_example.db",
+    "sqlite:///fastapi_latensight_example.db",
     connect_args={"check_same_thread": False},
 )
-lens: Lens
+profiler: Latensight
 
 
 @asynccontextmanager
@@ -28,7 +28,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             text("INSERT OR IGNORE INTO items (id, name) VALUES (1, 'example item')")
         )
     yield
-    lens.close()
+    profiler.close()
     engine.dispose()
 
 
@@ -49,12 +49,12 @@ def read_item(item_id: int) -> dict[str, object]:
     return {"item": dict(row) if row is not None else None}
 
 
-lens = Lens(
+profiler = Latensight(
     app,
-    config=LensConfig(
+    config=LatensightConfig(
         dashboard_enabled=True,
         environment="development",
         capture_sql=True,
     ),
 )
-lens.instrument_sqlalchemy(engine)
+profiler.instrument_sqlalchemy(engine)

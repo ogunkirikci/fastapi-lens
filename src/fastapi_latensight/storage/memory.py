@@ -3,11 +3,11 @@
 from threading import RLock
 from typing import ClassVar
 
-from fastapi_lens.exporters.json import (
+from fastapi_latensight.exporters.json import (
     DEFAULT_MAX_TRACE_BYTES,
     trace_snapshot_to_json,
 )
-from fastapi_lens.models import RequestTraceSnapshot
+from fastapi_latensight.models import RequestTraceSnapshot
 
 
 class MemoryTraceStore:

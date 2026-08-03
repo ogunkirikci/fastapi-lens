@@ -3,13 +3,13 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
-from fastapi_lens.exporters.json import (
+from fastapi_latensight.exporters.json import (
     TraceJsonSizeError,
     UnsupportedSchemaVersionError,
     trace_snapshot_to_dict,
     trace_snapshot_to_json,
 )
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     DependencyCacheStatus,
     DependencyScope,
     Diagnostic,

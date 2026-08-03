@@ -1,8 +1,8 @@
 import asyncio
 from datetime import UTC, datetime
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.context import (
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.context import (
     bind_request_context,
     current_collector,
     current_parent_segment_id,
@@ -11,7 +11,7 @@ from fastapi_lens.context import (
     exit_segment,
     reset_request_context,
 )
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     DependencyCacheStatus,
     LogicalDependencyNode,
     RequestTrace,

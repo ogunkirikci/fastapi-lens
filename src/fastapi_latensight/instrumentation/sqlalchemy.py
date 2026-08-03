@@ -13,9 +13,9 @@ from sqlalchemy import event
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.context import current_collector, enter_segment, exit_segment
-from fastapi_lens.models import (
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.context import current_collector, enter_segment, exit_segment
+from fastapi_latensight.models import (
     JsonValue,
     SegmentStatus,
     SegmentType,
@@ -23,7 +23,7 @@ from fastapi_lens.models import (
     TraceSegment,
 )
 
-SQLALCHEMY_INTERNAL_EXECUTION_OPTION = "fastapi_lens_internal"
+SQLALCHEMY_INTERNAL_EXECUTION_OPTION = "fastapi_latensight_internal"
 DEFAULT_MAX_SQL_LENGTH = 2_000
 
 _COMMENT_PATTERN = re.compile(r"--[^\r\n]*|/\*.*?\*/", re.DOTALL)
@@ -87,7 +87,7 @@ class SqlAlchemyInstrumentation:
         self._max_sql_length = max_sql_length
         self._lock = RLock()
         self._registrations: dict[int, _EngineRegistration] = {}
-        self._stack_key = f"fastapi_lens_sql_stack_{id(self)}"
+        self._stack_key = f"fastapi_latensight_sql_stack_{id(self)}"
         self._before_listener = self._before_cursor_execute
         self._after_listener = self._after_cursor_execute
         self._error_listener = self._handle_error

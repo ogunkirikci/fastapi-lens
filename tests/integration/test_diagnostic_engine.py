@@ -3,9 +3,9 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from fastapi_lens.diagnostics import DiagnosticConfig, DiagnosticEngine
-from fastapi_lens.middleware import LensMiddleware
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.diagnostics import DiagnosticConfig, DiagnosticEngine
+from fastapi_latensight.middleware import LatensightMiddleware
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 
 def test_builtin_diagnostic_engine_runs_before_snapshot_storage() -> None:
@@ -18,7 +18,7 @@ def test_builtin_diagnostic_engine_runs_before_snapshot_storage() -> None:
         return {"ok": True}
 
     with TestClient(
-        LensMiddleware(
+        LatensightMiddleware(
             app,
             store=store,
             diagnostic_rules=(engine,),

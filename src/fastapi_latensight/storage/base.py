@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from fastapi_lens.models import RequestTraceSnapshot
+from fastapi_latensight.models import RequestTraceSnapshot
 
 
 class TraceStore(Protocol):

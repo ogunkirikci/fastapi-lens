@@ -1,4 +1,4 @@
-from fastapi_lens import __version__
+from fastapi_latensight import __version__
 
 
 def test_package_exposes_version() -> None:

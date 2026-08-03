@@ -11,7 +11,7 @@ uv run --with uvicorn uvicorn examples.dependencies.app:app
 ```
 
 Open `http://127.0.0.1:8000/profile`, then inspect the trace at
-`http://127.0.0.1:8000/__lens__/`.
+`http://127.0.0.1:8000/__latensight__/`.
 
 The dependency graph shows:
 

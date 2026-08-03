@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for contributing to `fastapi-lens`.
+Thank you for contributing to `fastapi-latensight`.
 
 ## Development setup
 

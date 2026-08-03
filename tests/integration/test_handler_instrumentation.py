@@ -11,24 +11,24 @@ from fastapi.dependencies.models import Dependant
 from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.context import (
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.context import (
     bind_request_context,
     current_collector,
     reset_request_context,
 )
-from fastapi_lens.instrumentation.handler import (
+from fastapi_latensight.instrumentation.handler import (
     HandlerInstrumentation,
     handler_instrumentation,
 )
-from fastapi_lens.middleware import LensMiddleware
-from fastapi_lens.models import (
+from fastapi_latensight.middleware import LatensightMiddleware
+from fastapi_latensight.models import (
     RequestTrace,
     RequestTraceSnapshot,
     SegmentStatus,
     SegmentType,
 )
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 
 def make_collector() -> TraceCollector:
@@ -69,7 +69,7 @@ def test_async_handler_records_wall_clock_segment() -> None:
 
     with (
         installed_handler_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         assert client.get("/").status_code == 200
 
@@ -90,7 +90,7 @@ def test_sync_handler_context_propagates_and_records_thread_pool_wall_clock() ->
 
     with (
         installed_handler_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get("/")
 
@@ -111,7 +111,7 @@ def test_handler_exception_is_recorded_without_changing_behavior() -> None:
     with (
         installed_handler_instrumentation(),
         TestClient(
-            LensMiddleware(app, store=store),
+            LatensightMiddleware(app, store=store),
             raise_server_exceptions=False,
         ) as client,
     ):
@@ -139,7 +139,7 @@ def test_streaming_handler_ends_when_response_object_is_created() -> None:
 
     with (
         installed_handler_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         assert client.get("/").content == b"firstsecond"
 

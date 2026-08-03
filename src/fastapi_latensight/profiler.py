@@ -6,39 +6,41 @@ from typing import Any
 
 from fastapi import FastAPI
 
-from fastapi_lens.config import LensConfig, enabled_from_environment
-from fastapi_lens.dashboard import create_dashboard_app
-from fastapi_lens.diagnostics import DiagnosticConfig, DiagnosticEngine
-from fastapi_lens.instrumentation import (
+from fastapi_latensight.config import LatensightConfig, enabled_from_environment
+from fastapi_latensight.dashboard import create_dashboard_app
+from fastapi_latensight.diagnostics import DiagnosticConfig, DiagnosticEngine
+from fastapi_latensight.instrumentation import (
     dependency_instrumentation,
     handler_instrumentation,
     serialization_instrumentation,
 )
-from fastapi_lens.middleware import LensMiddleware, ProfilerState
-from fastapi_lens.models import RequestTraceSnapshot
-from fastapi_lens.redaction import TraceSanitizer, TraceSanitizerConfig
-from fastapi_lens.security import AuthorizationDependency, CsrfPolicy
-from fastapi_lens.storage.base import TraceStore
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.middleware import LatensightMiddleware, ProfilerState
+from fastapi_latensight.models import RequestTraceSnapshot
+from fastapi_latensight.redaction import TraceSanitizer, TraceSanitizerConfig
+from fastapi_latensight.security import AuthorizationDependency, CsrfPolicy
+from fastapi_latensight.storage.base import TraceStore
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 
-class Lens:
+class Latensight:
     """Attach profiling, storage, diagnostics, and an optional dashboard."""
 
     def __init__(
         self,
         app: FastAPI,
         *,
-        config: LensConfig | None = None,
+        config: LatensightConfig | None = None,
         store: TraceStore | None = None,
         dashboard_dependencies: Sequence[AuthorizationDependency] = (),
         cookie_authenticated_dashboard: bool = False,
         csrf_policy: CsrfPolicy | None = None,
     ) -> None:
         if app.middleware_stack is not None:
-            raise RuntimeError("Lens must be attached before application startup.")
-        if getattr(app.state, "fastapi_lens", None) is not None:
-            raise RuntimeError("A Lens instance is already attached to this app.")
+            raise RuntimeError(
+                "Latensight must be attached before application startup."
+            )
+        if getattr(app.state, "fastapi_latensight", None) is not None:
+            raise RuntimeError("A Latensight instance is already attached to this app.")
 
         self.app = app
         self.config = self._resolve_config(config)
@@ -95,7 +97,7 @@ class Lens:
                 serialization_instrumentation.install(self._owner)
                 installed_adapters.append(serialization_instrumentation)
             app.add_middleware(
-                LensMiddleware,
+                LatensightMiddleware,
                 store=self.store,
                 state=self.state,
                 include_routes=self.config.include_routes,
@@ -112,14 +114,14 @@ class Lens:
             for adapter in reversed(installed_adapters):
                 adapter.remove(self._owner)
             raise
-        app.state.fastapi_lens = self
+        app.state.fastapi_latensight = self
 
     @staticmethod
-    def _resolve_config(config: LensConfig | None) -> LensConfig:
+    def _resolve_config(config: LatensightConfig | None) -> LatensightConfig:
         if config is not None:
             return config
         environment_enabled = enabled_from_environment(os.environ)
-        return LensConfig(
+        return LatensightConfig(
             enabled=True if environment_enabled is None else environment_enabled
         )
 
@@ -148,9 +150,9 @@ class Lens:
         self._ensure_open()
         if not self.config.capture_sql:
             raise RuntimeError(
-                "SQL capture is disabled; set LensConfig(capture_sql=True)."
+                "SQL capture is disabled; set LatensightConfig(capture_sql=True)."
             )
-        from fastapi_lens.instrumentation.sqlalchemy import (
+        from fastapi_latensight.instrumentation.sqlalchemy import (
             sqlalchemy_instrumentation,
         )
 
@@ -162,8 +164,8 @@ class Lens:
         self._registered_engines[id(engine)] = engine
 
     def uninstrument_sqlalchemy(self, engine: Any) -> None:
-        """Release this Lens instance's registration for one engine."""
-        from fastapi_lens.instrumentation.sqlalchemy import (
+        """Release this Latensight instance's registration for one engine."""
+        from fastapi_latensight.instrumentation.sqlalchemy import (
             sqlalchemy_instrumentation,
         )
 
@@ -193,7 +195,7 @@ class Lens:
             return
         self.state.disable()
         if self._registered_engines:
-            from fastapi_lens.instrumentation.sqlalchemy import (
+            from fastapi_latensight.instrumentation.sqlalchemy import (
                 sqlalchemy_instrumentation,
             )
 
@@ -206,4 +208,4 @@ class Lens:
 
     def _ensure_open(self) -> None:
         if self._closed:
-            raise RuntimeError("Lens is closed.")
+            raise RuntimeError("Latensight is closed.")

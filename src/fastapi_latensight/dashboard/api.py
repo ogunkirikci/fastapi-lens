@@ -12,8 +12,8 @@ from starlette.datastructures import MutableHeaders
 from starlette.responses import FileResponse, HTMLResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from fastapi_lens.config import LensConfig
-from fastapi_lens.dashboard.schemas import (
+from fastapi_latensight.config import LatensightConfig
+from fastapi_latensight.dashboard.schemas import (
     ClearTracesResponse,
     RouteSummaryItem,
     RouteSummaryResponse,
@@ -21,16 +21,19 @@ from fastapi_lens.dashboard.schemas import (
     TraceListItem,
     TraceListResponse,
 )
-from fastapi_lens.exporters.json import SUPPORTED_SCHEMA_VERSION, trace_snapshot_to_dict
-from fastapi_lens.models import RequestTraceSnapshot, SegmentType
-from fastapi_lens.security import (
+from fastapi_latensight.exporters.json import (
+    SUPPORTED_SCHEMA_VERSION,
+    trace_snapshot_to_dict,
+)
+from fastapi_latensight.models import RequestTraceSnapshot, SegmentType
+from fastapi_latensight.security import (
     AuthorizationDependency,
     CsrfPolicy,
     CsrfValidationError,
     dashboard_security_headers,
     validate_dashboard_configuration,
 )
-from fastapi_lens.storage.base import TraceStore
+from fastapi_latensight.storage.base import TraceStore
 
 _DASHBOARD_DIRECTORY = Path(__file__).parent
 _TEMPLATE_DIRECTORY = _DASHBOARD_DIRECTORY / "templates"
@@ -177,7 +180,7 @@ async def _all_traces(
 def create_dashboard_app(
     store: TraceStore,
     *,
-    config: LensConfig,
+    config: LatensightConfig,
     authorization_dependencies: Sequence[AuthorizationDependency] = (),
     max_page_size: int = 200,
     csrf_policy: CsrfPolicy | None = None,
@@ -196,7 +199,7 @@ def create_dashboard_app(
     process_local = _process_local(store)
     templates = _template_environment()
     app = FastAPI(
-        title="fastapi-lens dashboard API",
+        title="fastapi-latensight dashboard API",
         docs_url=None,
         redoc_url=None,
         openapi_url=None,

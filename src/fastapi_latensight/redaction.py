@@ -3,8 +3,8 @@
 import math
 from dataclasses import dataclass
 
-from fastapi_lens.exporters.json import trace_snapshot_to_json
-from fastapi_lens.models import (
+from fastapi_latensight.exporters.json import trace_snapshot_to_json
+from fastapi_latensight.models import (
     Diagnostic,
     JsonValue,
     RequestTrace,

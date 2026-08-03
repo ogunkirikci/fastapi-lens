@@ -1,1 +1,1 @@
-"""Runnable fastapi-lens examples."""
+"""Runnable fastapi-latensight examples."""

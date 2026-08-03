@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     Diagnostic,
     JsonValue,
     RequestTrace,

@@ -1,6 +1,6 @@
 import pytest
 
-from fastapi_lens.utils.timing import (
+from fastapi_latensight.utils.timing import (
     IntervalErrorReason,
     InvalidIntervalError,
     interval_union_duration_ns,

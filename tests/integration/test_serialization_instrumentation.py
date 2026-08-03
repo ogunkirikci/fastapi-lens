@@ -10,13 +10,13 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
-from fastapi_lens.instrumentation.serialization import (
+from fastapi_latensight.instrumentation.serialization import (
     SerializationInstrumentation,
     serialization_instrumentation,
 )
-from fastapi_lens.middleware import LensMiddleware
-from fastapi_lens.models import RequestTraceSnapshot, SegmentStatus, SegmentType
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.middleware import LatensightMiddleware
+from fastapi_latensight.models import RequestTraceSnapshot, SegmentStatus, SegmentType
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 _routing: Any = fastapi.routing
 
@@ -48,7 +48,7 @@ def test_response_model_serialization_records_one_combined_segment() -> None:
 
     with (
         installed_serialization_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get("/")
 
@@ -76,7 +76,7 @@ def test_sync_handler_serialization_is_labeled_without_splitting_subphases() -> 
 
     with (
         installed_serialization_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         assert client.get("/").json() == {"value": 7}
 
@@ -97,7 +97,7 @@ def test_json_encoding_without_a_response_model_is_profiled() -> None:
 
     with (
         installed_serialization_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         assert client.get("/").json() == {"items": [1, 2, 3]}
 
@@ -130,7 +130,7 @@ def test_custom_and_streaming_responses_have_no_serialization_segment(
 
     with (
         installed_serialization_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get(path)
 
@@ -152,7 +152,7 @@ def test_response_validation_error_is_recorded_without_behavior_change() -> None
     with (
         installed_serialization_instrumentation(),
         TestClient(
-            LensMiddleware(app, store=store),
+            LatensightMiddleware(app, store=store),
             raise_server_exceptions=False,
         ) as client,
     ):

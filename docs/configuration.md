@@ -1,12 +1,12 @@
 # Configuration reference
 
-`LensConfig` is immutable and validated at construction. Pass it to `Lens`
+`LatensightConfig` is immutable and validated at construction. Pass it to `Latensight`
 before the FastAPI application starts:
 
 ```python
-from fastapi_lens import Lens, LensConfig
+from fastapi_latensight import Latensight, LatensightConfig
 
-lens = Lens(app, config=LensConfig(...))
+profiler = Latensight(app, config=LatensightConfig(...))
 ```
 
 ## Runtime and route selection
@@ -30,7 +30,7 @@ The default excluded paths are:
     "/openapi.json",
     "/health",
     "/metrics",
-    "/__lens__*",
+    "/__latensight__*",
 )
 ```
 
@@ -73,7 +73,7 @@ one independent buffer and route summary per worker.
 | Field | Default | Meaning |
 |---|---|---|
 | `dashboard_enabled` | `False` | Mount the dashboard. |
-| `dashboard_path` | `"/__lens__"` | Mount path within the FastAPI application. |
+| `dashboard_path` | `"/__latensight__"` | Mount path within the FastAPI application. |
 | `environment` | `None` | Explicit deployment class. |
 | `allow_in_production` | `False` | Required staging and production override. |
 
@@ -82,7 +82,7 @@ Development and test still require explicit dashboard enablement. Staging and
 production require all of:
 
 ```python
-LensConfig(
+LatensightConfig(
     dashboard_enabled=True,
     environment="production",
     allow_in_production=True,
@@ -94,8 +94,8 @@ and at least one authorization dependency passed through
 
 ## Environment variables
 
-Version 0.1 supports `FASTAPI_LENS_ENABLED` only. It is read when `Lens` is
-constructed without an explicit `LensConfig`.
+Version 0.1 supports `FASTAPI_LATENSIGHT_ENABLED` only. It is read when `Latensight` is
+constructed without an explicit `LatensightConfig`.
 
 Accepted true values are `true`, `yes`, `on`, and `1`; accepted false values are
 `false`, `no`, `off`, and `0`, case-insensitively. Invalid values fail fast.
@@ -104,8 +104,8 @@ Precedence is:
 
 ```text
 runtime enable/disable
-    > explicit LensConfig
-    > FASTAPI_LENS_ENABLED
+    > explicit LatensightConfig
+    > FASTAPI_LATENSIGHT_ENABLED
     > default
 ```
 

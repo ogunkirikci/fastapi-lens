@@ -408,7 +408,7 @@ wheels = [
 ]
 
 [[package]]
-name = "fastapi-lens"
+name = "fastapi-latensight"
 version = "0.1.0a0"
 source = { editable = "." }
 dependencies = [

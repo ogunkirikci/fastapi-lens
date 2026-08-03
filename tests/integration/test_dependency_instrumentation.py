@@ -24,18 +24,18 @@ from pydantic import BaseModel
 from starlette.requests import HTTPConnection
 from starlette.types import Message, Receive, Scope, Send
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.context import (
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.context import (
     bind_request_context,
     current_collector,
     reset_request_context,
 )
-from fastapi_lens.instrumentation.dependencies import (
+from fastapi_latensight.instrumentation.dependencies import (
     DependencyInstrumentation,
     dependency_instrumentation,
 )
-from fastapi_lens.middleware import LensMiddleware
-from fastapi_lens.models import (
+from fastapi_latensight.middleware import LatensightMiddleware
+from fastapi_latensight.models import (
     DependencyCacheStatus,
     DependencyScope,
     RequestTrace,
@@ -43,7 +43,7 @@ from fastapi_lens.models import (
     SegmentStatus,
     SegmentType,
 )
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 _routing: Any = fastapi.routing
 
@@ -89,7 +89,7 @@ def test_sync_async_nested_and_callable_dependencies_are_profiled() -> None:
 
     with (
         installed_dependency_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get("/")
 
@@ -132,7 +132,7 @@ def test_cache_hits_and_bypasses_have_truthful_metadata() -> None:
 
     with (
         installed_dependency_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get("/")
 
@@ -172,7 +172,7 @@ def test_bypass_can_seed_the_native_cache_for_a_later_cached_occurrence() -> Non
 
     with (
         installed_dependency_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get("/")
 
@@ -202,7 +202,7 @@ def test_dependency_override_preserves_original_lookup_identity() -> None:
 
     with (
         installed_dependency_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get("/")
 
@@ -255,7 +255,7 @@ def test_solver_preserves_request_parameters_body_and_special_injections() -> No
 
     with (
         installed_dependency_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         client.cookies.set("session", "session-id")
         response = client.post(
@@ -297,7 +297,7 @@ def test_unnamed_route_dependency_and_background_task_injection_are_preserved() 
 
     with (
         installed_dependency_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get("/")
 
@@ -377,7 +377,7 @@ def test_subdependency_validation_errors_skip_the_parent_callable() -> None:
 
     with (
         installed_dependency_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get("/")
 
@@ -423,7 +423,7 @@ def test_generator_setup_cleanup_scopes_and_lifo_order_are_preserved() -> None:
 
     with (
         installed_dependency_instrumentation(),
-        TestClient(LensMiddleware(app, store=store)) as client,
+        TestClient(LatensightMiddleware(app, store=store)) as client,
     ):
         response = client.get("/")
 
@@ -483,7 +483,7 @@ def test_dependency_exception_is_recorded_without_changing_behavior() -> None:
     with (
         installed_dependency_instrumentation(),
         TestClient(
-            LensMiddleware(app, store=store),
+            LatensightMiddleware(app, store=store),
             raise_server_exceptions=False,
         ) as client,
     ):
@@ -513,7 +513,7 @@ def test_generator_cleanup_exception_is_recorded_and_propagated() -> None:
     with (
         installed_dependency_instrumentation(),
         TestClient(
-            LensMiddleware(app, store=store),
+            LatensightMiddleware(app, store=store),
             raise_server_exceptions=False,
         ) as client,
     ):
@@ -550,7 +550,7 @@ def test_generator_setup_exception_has_no_synthetic_cleanup_segment() -> None:
     with (
         installed_dependency_instrumentation(),
         TestClient(
-            LensMiddleware(app, store=store),
+            LatensightMiddleware(app, store=store),
             raise_server_exceptions=False,
         ) as client,
     ):

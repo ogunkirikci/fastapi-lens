@@ -1,6 +1,6 @@
-# fastapi-lens
+# fastapi-latensight
 
-`fastapi-lens` is a FastAPI-aware request execution profiler. It records where
+`fastapi-latensight` is a FastAPI-aware request execution profiler. It records where
 request time is spent across lifecycle phases, endpoint handlers, dependencies,
 response serialization, custom segments, and explicitly registered SQLAlchemy
 engines.
@@ -36,20 +36,20 @@ sessions.
 ## Installation
 
 ```bash
-pip install fastapi-lens
+pip install fastapi-latensight
 ```
 
 Install SQLAlchemy support:
 
 ```bash
-pip install "fastapi-lens[sqlalchemy]"
+pip install "fastapi-latensight[sqlalchemy]"
 ```
 
 ## Quick start
 
 ```python
 from fastapi import FastAPI
-from fastapi_lens import Lens, LensConfig
+from fastapi_latensight import Latensight, LatensightConfig
 
 app = FastAPI()
 
@@ -59,26 +59,26 @@ async def read_item(item_id: int) -> dict[str, int]:
     return {"item_id": item_id}
 
 
-lens = Lens(
+profiler = Latensight(
     app,
-    config=LensConfig(
+    config=LatensightConfig(
         dashboard_enabled=True,
         environment="development",
     ),
 )
 ```
 
-Run the application, make a request, and open `/__lens__/`. The dashboard is
+Run the application, make a request, and open `/__latensight__/`. The dashboard is
 disabled by default and enabling it always requires an explicit environment.
 
 When the application owns a cleanup lifecycle, release process-global adapter
 registrations during shutdown:
 
 ```python
-lens.close()
+profiler.close()
 ```
 
-`close()` is terminal for that Lens instance. `disable()` and `enable()` are
+`close()` is terminal for that Latensight instance. `disable()` and `enable()` are
 the reversible runtime controls for ordinary operation.
 
 ## SQLAlchemy
@@ -90,8 +90,8 @@ register every intended engine explicitly:
 from sqlalchemy import create_engine
 
 engine = create_engine("sqlite:///application.db")
-lens = Lens(app, config=LensConfig(capture_sql=True))
-lens.instrument_sqlalchemy(engine)
+profiler = Latensight(app, config=LatensightConfig(capture_sql=True))
+profiler.instrument_sqlalchemy(engine)
 ```
 
 Bind values are not stored. Statements are normalized, literal values are
@@ -100,7 +100,7 @@ masked, and display text is bounded before storage.
 ## Custom segments
 
 ```python
-from fastapi_lens import current_trace, trace_segment
+from fastapi_latensight import current_trace, trace_segment
 
 
 @trace_segment("price_order")
@@ -140,4 +140,4 @@ messages use English only.
 
 ## License
 
-`fastapi-lens` is released under the MIT License.
+`fastapi-latensight` is released under the MIT License.

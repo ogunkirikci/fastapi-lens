@@ -1,1 +1,1 @@
-"""Unit tests for fastapi-lens."""
+"""Unit tests for fastapi-latensight."""

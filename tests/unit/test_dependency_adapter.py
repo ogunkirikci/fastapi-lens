@@ -9,14 +9,14 @@ import pytest
 from fastapi.dependencies import utils as dependency_utils
 from fastapi.dependencies.models import Dependant
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.instrumentation.dependencies import (
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.instrumentation.dependencies import (
     DependencyInstrumentation,
     _callable_name,
     _DependencyTraceState,
     _status_for_error,
 )
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     DependencyCacheStatus,
     RequestTrace,
     SegmentStatus,

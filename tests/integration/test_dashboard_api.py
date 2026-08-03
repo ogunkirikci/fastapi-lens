@@ -6,9 +6,9 @@ import pytest
 from fastapi import FastAPI, Header, HTTPException, status
 from fastapi.testclient import TestClient
 
-from fastapi_lens.config import LensConfig
-from fastapi_lens.dashboard import create_dashboard_app
-from fastapi_lens.models import (
+from fastapi_latensight.config import LatensightConfig
+from fastapi_latensight.dashboard import create_dashboard_app
+from fastapi_latensight.models import (
     DependencyCacheStatus,
     Diagnostic,
     LogicalDependencyNode,
@@ -18,8 +18,8 @@ from fastapi_lens.models import (
     TraceError,
     TraceSegment,
 )
-from fastapi_lens.security import CsrfPolicy, DashboardSecurityError
-from fastapi_lens.storage.memory import MemoryTraceStore
+from fastapi_latensight.security import CsrfPolicy, DashboardSecurityError
+from fastapi_latensight.storage.memory import MemoryTraceStore
 
 NS_PER_MS = 1_000_000
 
@@ -130,13 +130,13 @@ def seeded_store() -> MemoryTraceStore:
     return store
 
 
-def dashboard_config(**overrides: object) -> LensConfig:
+def dashboard_config(**overrides: object) -> LatensightConfig:
     values: dict[str, object] = {
         "dashboard_enabled": True,
         "environment": "development",
     }
     values.update(overrides)
-    return LensConfig(**values)  # type: ignore[arg-type]
+    return LatensightConfig(**values)  # type: ignore[arg-type]
 
 
 def assert_security_headers(response: object) -> None:
@@ -334,15 +334,15 @@ def test_cookie_authenticated_mutation_requires_double_submit_csrf() -> None:
     )
 
     with TestClient(app) as client:
-        client.cookies.set("fastapi_lens_csrf", "csrf-token")
+        client.cookies.set("fastapi_latensight_csrf", "csrf-token")
         missing = client.delete("/api/traces")
         mismatch = client.delete(
             "/api/traces",
-            headers={"x-fastapi-lens-csrf": "wrong"},
+            headers={"x-fastapi-latensight-csrf": "wrong"},
         )
         valid = client.delete(
             "/api/traces",
-            headers={"x-fastapi-lens-csrf": "csrf-token"},
+            headers={"x-fastapi-latensight-csrf": "csrf-token"},
         )
 
     assert missing.status_code == 403
@@ -359,7 +359,7 @@ def test_dashboard_creation_fails_closed_for_disabled_or_unsafe_config() -> None
         ValueError,
         match=r"Cannot create a dashboard app while it is disabled\.",
     ):
-        create_dashboard_app(store, config=LensConfig())
+        create_dashboard_app(store, config=LatensightConfig())
 
     with pytest.raises(
         DashboardSecurityError,
@@ -497,13 +497,15 @@ def test_dashboard_urls_include_the_application_mount_path() -> None:
         max_page_size=2,
     )
     parent = FastAPI()
-    parent.mount("/__lens__", dashboard_app)
+    parent.mount("/__latensight__", dashboard_app)
 
     with TestClient(parent) as client:
-        response = client.get("/__lens__/")
-        asset = client.get("/__lens__/static/app.js")
+        response = client.get("/__latensight__/")
+        asset = client.get("/__latensight__/static/app.js")
 
     assert response.status_code == 200
-    assert 'data-traces-url="http://testserver/__lens__/api/traces"' in response.text
-    assert 'href="http://testserver/__lens__/static/app.css"' in response.text
+    assert (
+        'data-traces-url="http://testserver/__latensight__/api/traces"' in response.text
+    )
+    assert 'href="http://testserver/__latensight__/static/app.css"' in response.text
     assert asset.status_code == 200

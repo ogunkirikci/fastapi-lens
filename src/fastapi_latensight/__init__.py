@@ -1,14 +1,14 @@
-"""Public package interface for fastapi-lens."""
+"""Public package interface for fastapi-latensight."""
 
 from typing import Any, Final
 
-from .config import LensConfig
-from .lens import Lens
+from .config import LatensightConfig
+from .profiler import Latensight
 from .segments import current_trace, trace_segment
 
 __all__ = [
-    "Lens",
-    "LensConfig",
+    "Latensight",
+    "LatensightConfig",
     "__version__",
     "current_trace",
     "instrument_sqlalchemy",

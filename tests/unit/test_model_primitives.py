@@ -3,7 +3,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from fastapi_lens.models import Diagnostic, SegmentStatus, SegmentType, TraceError
+from fastapi_latensight.models import Diagnostic, SegmentStatus, SegmentType, TraceError
 
 
 def test_segment_type_values_are_stable_strings() -> None:

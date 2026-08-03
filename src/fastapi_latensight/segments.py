@@ -8,13 +8,13 @@ from time import perf_counter_ns
 from typing import Any, ParamSpec, TypeVar, cast
 from uuid import uuid4
 
-from fastapi_lens.collector import TraceCollector
-from fastapi_lens.context import (
+from fastapi_latensight.collector import TraceCollector
+from fastapi_latensight.context import (
     current_collector,
     enter_segment,
     exit_segment,
 )
-from fastapi_lens.models import (
+from fastapi_latensight.models import (
     JsonValue,
     SegmentStatus,
     SegmentType,
